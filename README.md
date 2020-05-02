@@ -13,3 +13,9 @@
 - Application home page: `localhost:5000`
 
 ## Making Enhancements:
+
+## Contact:
+Email Repo Owner at: 9045251+FortesFortunaAdiuvat@users.noreply.github.com
+
+#### Helpful Issue Resolutions:
+- [Use No-Reply non-personal Email on commits] (https://stackoverflow.com/questions/43863522/your-push-would-publish-a-private-email-address-error/51097104#51097104)
