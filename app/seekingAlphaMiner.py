@@ -45,8 +45,8 @@ def deleteDatabase():
     return
 
 def rotateLog():
-    if os.path.exists('seekingAlphaLog.csv'):
-        os.rename('seekingAlphaLog.csv', f'seekingAlphaLog_{datetime.datetime.now()}.csv')
+    if os.path.exists('excel/seekingAlphaLog.csv'):
+        os.rename('excel/seekingAlphaLog.csv', f'excel/seekingAlphaLog_{datetime.datetime.now()}.csv')
     return
 
 def ifNotExistsCreateDB():
@@ -80,13 +80,24 @@ def ifNotExistsCreateDB():
 
     return
 
+def getSeekingAlphaProCookie():
+    if os.path.exists('seekingAlphaProCookie.txt'):
+        with open('seekingAlphaProCookie.txt', 'r') as f:
+            seekingAlphaProCookie = f.readline()
+        # print(seekingAlphaProCookie)
+    else:
+        seekingAlphaProCookie = ''
+    return seekingAlphaProCookie
+
 def getRequestHeaders(ticker):
+    seekingAlphaProCookie = getSeekingAlphaProCookie()
     headers = { # Necessary or else requests are 403 Forbidden 
         'Referer': f'https://seekingalpha.com/symbol/{ticker}/balance-sheet',
         'X-Requested-With': 'XMLHttpRequest',
         'User-Agent': 'Mozilla/5.0',
         'Accept': '*/*',
-        'cookie': 'machine_cookie=4731953277079; _gcl_au=1.1.1199554884.1584215784; _pxvid=e2354d36-662d-11ea-b255-0242ac12000c; h_px=1; portfolio_sort_type=a_z; has_paid_subscription=true; ever_pro=1; user_id=51399747; user_nick=; user_devices=1; u_voc=209; marketplace_author_slugs=; user_perm=; sapu=12; user_remember_token=b663c1290b28648465ba3a9318b2ba5e8c9035fc; user_cookie_key=vhepn; _igt=3eff2345-50a2-4b60-a8c4-39cd61c4c355; _ig=9df61b54-419a-4482-cdc5-03229a410f9c; _ga=GA1.2.2136682556.1587757982; _gid=GA1.2.584912144.1587757982; ga_clientid=2136682556.1587757982; __pnahc=0; __tbc=%7Bjzx%7DlCp-P5kTOqotpgFeypItnKS3A44UHT9sb1IJ3lxi9-tdsGRLenQpOSERaaj8bTeUNfdIs_-76qPyuNAwJKCo47DY3s-wYK4D6WUV902MnXUHRK2A0IQ6GtabSFotCECnUVgFAp6l8Mpn6PJS7yCpyA; __pat=-14400000; __pvi=%7B%22id%22%3A%22v-2020-04-24-13-53-04-540-XMRlyuZeOafKa7bz-bcf2d031d41cb6b433743ba653047c89%22%2C%22domain%22%3A%22.seekingalpha.com%22%2C%22time%22%3A1587757987298%7D; xbc=%7Bjzx%7DvCGphVlY9G4xxbXMbU8IuTNHJT8Yqbk_90HouEauVQaYv8bfeCicutcYPlBHwdzy1ZubkHNyv6fLEAD6-vDWEoAg9zPeinc0DHqVA8piSbx4R-DLnTT5L3pBjNj5xQKkYi-Jf5mLolR2HyrLdfZkSV3Ytksz2sJ95qmuyU4zL9PkrBZxm_xYO9jUpIbQyW2f_AIz6V5o4jfaAvpwM2_Yiv7eCg92K16Z4rOuGrbH9bNLMAJ0FFexg1wu-Mkhj1AoTG8hAhNgJGQp7GSaonPHI8AIFVrGkvP41Ki_RUI2ZI4AG_FThVhuJP0IL71oUyMF0SnHBlGobcIZ5e7MEvgRRffWX98O0pYApIiqxmqtQXdS6Zg77YBXUbQ6ipG9T64BY55zeAhJ8O0UVdNJJKec8PAm6GzbDAptjt-JnZJfx50; _pxff_axt=540; _pxff_wa=1,702; __adblocker=true; _px2=eyJ1IjoiZjljYjc3MDAtODY3OC0xMWVhLTg5OTItZWQwZjgwNzZhMzU0IiwidiI6ImUyMzU0ZDM2LTY2MmQtMTFlYS1iMjU1LTAyNDJhYzEyMDAwYyIsInQiOjE1ODc3NjY5NzMzNjIsImgiOiI0MzAwNmU0ZGFiZDA5Yzc3NWZlZjgxZmI1N2U4ZGE0ODYxMjBlZTc1MjkzNzQ4MzAyNTZhZDJhYzlkYjczZDI2In0=; _px=1UFk9dAcIQDjrYO2j89NyN584WxgNLDjvaT8/P0q9/xUzwEJkHlGaMhWqmkn6cea+RBEggbqLx6+y+NYK0B92w==:1000:Ok0hU+SBeflq6QESBQeZGfaK1WWmMyTqv8KuDNQIf8ivAQEFXfO7LptURzbEsnPbE+g77f1lHUckIGKHu6LaWa8t7OhjE38HxSJd+qEmDn4wZU3gRgziEWCLLVSq7sxcYKXj0uMOgpicXT5f5A/+s6Q7DQuZRDX00ftllKw6Ne0zdIYEv75z3TS0VelWOPCDsuJM1rfhn60UvBbw6nEbLKcRAeW7k4eyP4z9CeVi7IIBe0SjW//KSW9mwWTw12IvigKq1OHZO7mWg679nD/Y8w==; _pxde=ca77bdecb75957e177e3bf4c87ca8c1d5e2c32ef6b70926ffb9698baace9a54f:eyJ0aW1lc3RhbXAiOjE1ODc3NjY0OTE5NzIsImZfa2IiOjAsImZfdHlwZSI6InciLCJmX2lkIjoiMjE0NTMyNGYtZjRmZC00MGUyLTljZWQtMzJmZTdkMmU2MWJjIiwiZl9vcmlnaW4iOiJjdXN0b20ifQ==; gk_user_access=1*archived*1587766496; gk_user_access_sign=bd71b99f8e0161e0eae23c03a3ba0c446bcbdb82'
+        'cookie': f'{seekingAlphaProCookie}'
+        #'cookie': 'machine_cookie=4731953277079; _gcl_au=1.1.1199554884.1584215784; _pxvid=e2354d36-662d-11ea-b255-0242ac12000c; h_px=1; portfolio_sort_type=a_z; has_paid_subscription=true; ever_pro=1; user_id=51399747; user_nick=; user_devices=1; u_voc=209; marketplace_author_slugs=; user_perm=; sapu=12; user_remember_token=b663c1290b28648465ba3a9318b2ba5e8c9035fc; user_cookie_key=vhepn; _igt=3eff2345-50a2-4b60-a8c4-39cd61c4c355; _ig=9df61b54-419a-4482-cdc5-03229a410f9c; _ga=GA1.2.2136682556.1587757982; _gid=GA1.2.584912144.1587757982; ga_clientid=2136682556.1587757982; __pnahc=0; __tbc=%7Bjzx%7DlCp-P5kTOqotpgFeypItnKS3A44UHT9sb1IJ3lxi9-tdsGRLenQpOSERaaj8bTeUNfdIs_-76qPyuNAwJKCo47DY3s-wYK4D6WUV902MnXUHRK2A0IQ6GtabSFotCECnUVgFAp6l8Mpn6PJS7yCpyA; __pat=-14400000; __pvi=%7B%22id%22%3A%22v-2020-04-24-13-53-04-540-XMRlyuZeOafKa7bz-bcf2d031d41cb6b433743ba653047c89%22%2C%22domain%22%3A%22.seekingalpha.com%22%2C%22time%22%3A1587757987298%7D; xbc=%7Bjzx%7DvCGphVlY9G4xxbXMbU8IuTNHJT8Yqbk_90HouEauVQaYv8bfeCicutcYPlBHwdzy1ZubkHNyv6fLEAD6-vDWEoAg9zPeinc0DHqVA8piSbx4R-DLnTT5L3pBjNj5xQKkYi-Jf5mLolR2HyrLdfZkSV3Ytksz2sJ95qmuyU4zL9PkrBZxm_xYO9jUpIbQyW2f_AIz6V5o4jfaAvpwM2_Yiv7eCg92K16Z4rOuGrbH9bNLMAJ0FFexg1wu-Mkhj1AoTG8hAhNgJGQp7GSaonPHI8AIFVrGkvP41Ki_RUI2ZI4AG_FThVhuJP0IL71oUyMF0SnHBlGobcIZ5e7MEvgRRffWX98O0pYApIiqxmqtQXdS6Zg77YBXUbQ6ipG9T64BY55zeAhJ8O0UVdNJJKec8PAm6GzbDAptjt-JnZJfx50; _pxff_axt=540; _pxff_wa=1,702; __adblocker=true; _px2=eyJ1IjoiZjljYjc3MDAtODY3OC0xMWVhLTg5OTItZWQwZjgwNzZhMzU0IiwidiI6ImUyMzU0ZDM2LTY2MmQtMTFlYS1iMjU1LTAyNDJhYzEyMDAwYyIsInQiOjE1ODc3NjY5NzMzNjIsImgiOiI0MzAwNmU0ZGFiZDA5Yzc3NWZlZjgxZmI1N2U4ZGE0ODYxMjBlZTc1MjkzNzQ4MzAyNTZhZDJhYzlkYjczZDI2In0=; _px=1UFk9dAcIQDjrYO2j89NyN584WxgNLDjvaT8/P0q9/xUzwEJkHlGaMhWqmkn6cea+RBEggbqLx6+y+NYK0B92w==:1000:Ok0hU+SBeflq6QESBQeZGfaK1WWmMyTqv8KuDNQIf8ivAQEFXfO7LptURzbEsnPbE+g77f1lHUckIGKHu6LaWa8t7OhjE38HxSJd+qEmDn4wZU3gRgziEWCLLVSq7sxcYKXj0uMOgpicXT5f5A/+s6Q7DQuZRDX00ftllKw6Ne0zdIYEv75z3TS0VelWOPCDsuJM1rfhn60UvBbw6nEbLKcRAeW7k4eyP4z9CeVi7IIBe0SjW//KSW9mwWTw12IvigKq1OHZO7mWg679nD/Y8w==; _pxde=ca77bdecb75957e177e3bf4c87ca8c1d5e2c32ef6b70926ffb9698baace9a54f:eyJ0aW1lc3RhbXAiOjE1ODc3NjY0OTE5NzIsImZfa2IiOjAsImZfdHlwZSI6InciLCJmX2lkIjoiMjE0NTMyNGYtZjRmZC00MGUyLTljZWQtMzJmZTdkMmU2MWJjIiwiZl9vcmlnaW4iOiJjdXN0b20ifQ==; gk_user_access=1*archived*1587766496; gk_user_access_sign=bd71b99f8e0161e0eae23c03a3ba0c446bcbdb82'
     }
 
     return headers

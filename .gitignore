@@ -54,3 +54,6 @@ flask_env
 *db
 *csv
 app/*.db
+app/excel/*
+env
+app/seekingAlphaProCookie.txt
