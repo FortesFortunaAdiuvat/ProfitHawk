@@ -47,6 +47,8 @@ def deleteDatabase():
 def rotateLog():
     if os.path.exists('excel/seekingAlphaLog.csv'):
         os.rename('excel/seekingAlphaLog.csv', f'excel/seekingAlphaLog_{datetime.datetime.now()}.csv')
+    if os.path.exists('err/errorLog.txt'):
+        os.rename('err/errorLog.txt', f'err/errorLog_{datetime.datetime.now()}.txt')
     return
 
 def ifNotExistsCreateDB():
@@ -103,7 +105,7 @@ def getRequestHeaders(ticker):
     return headers
 
 def getDatabaseName():
-    databaseName = 'seekingAlpha_20200501.db'
+    databaseName = f'seekingAlpha_{datetime.datetime.now().strftime("%Y%m%d")}.db'
     return databaseName
 
 def log(string, color, font="slant", figlet=False):
@@ -668,7 +670,7 @@ def getAnnualIncomeStatementDateRange(ticker):
 ######  ### ####### #     # #######  #####   #####     ####### #######  #####  ###  #####  
 #########################################################################
 
-def calc_futureCoupon(ticker):
+def calc_futureCoupon(ticker, debugFlag):
     databaseName = getDatabaseName()
     sqliteConnection = sqlite3.connect(databaseName)
     cursor = sqliteConnection.cursor()
@@ -681,13 +683,13 @@ def calc_futureCoupon(ticker):
         lastEffectiveTaxRate = getLastEffectiveTaxRate(ticker)
         if 'nan' in str(lastEffectiveTaxRate):
             lastEffectiveTaxRate = 0
-        # print(lastEffectiveTaxRate)
-        # print(lastAfterTaxBasicEPS)
         try:
             if '-' in str(lastAfterTaxBasicEPS):
                 lastAfterTaxBasicEPS = str(lastAfterTaxBasicEPS).strip('-')
                 if lastEffectiveTaxRate == 0:
                     lastBeforeTaxBasicEPS = -(float(lastAfterTaxBasicEPS))
+                    if debugFlag ==True:
+                        print(f'lastBeforeTaxBasicEPS = -(float({lastAfterTaxBasicEPS}))')
                 else:
                     lastBeforeTaxBasicEPS = -(float(lastAfterTaxBasicEPS) / (1 - (lastEffectiveTaxRate/100)))
             else:
@@ -695,8 +697,12 @@ def calc_futureCoupon(ticker):
                     lastBeforeTaxBasicEPS = float(lastAfterTaxBasicEPS)
                 else:
                     lastBeforeTaxBasicEPS = float(lastAfterTaxBasicEPS) / (1 - (lastEffectiveTaxRate/100))
+            if debugFlag == True:
+                print(f'Last Effective Tax Rate: {lastEffectiveTaxRate}\n')
+                print(f'Last After Tax Basic EPS: {lastAfterTaxBasicEPS}\n')
         except:
             errorFlag += 1
+
         
         # print(lastBeforeTaxBasicEPS)
         
@@ -777,26 +783,35 @@ def calc_futureCoupon(ticker):
             errorFlag += 1
 
         #TODO: consistency printing out percentages and dollar amounts and displaying in screen output
-        prettyTable = PrettyTable(["Ticker", "Last Close Price", 'Last After Tax EPS', 'Last Tax Rate', 'Last Before-Tax EPS', 'Last DivYield', 'coupon', 'First Before-Tax EPS', 'Growth', 'In 5yrs', 'In 10yrs', 'In 15yrs', 'In 20yrs' ])
-        prettyTable.add_row([f'{ticker}',f'${lastClosePrice}',f'{round(lastAfterTaxBasicEPS,2)}',f'{round(lastEffectiveTaxRate,2)}',f'{round(lastBeforeTaxBasicEPS,2)}', f'{round(lastDivYield,2)}%', f'{round(coupon,2)}%', f'{round(firstBeforeTaxBasicEPS,2)}', f'{round(growth,2)}%', futureCoupon5yr, futureCoupon10yr, futureCoupon15yr, futureCoupon20yr])
-        print(prettyTable)
-        print(couponEquationString)
-        print(growthCalculationString)
-        #print(f'{ticker},,,,,,{round(coupon,2)},{round(growth,2)},{futureCoupon5yr},{futureCoupon10yr},{futureCoupon15yr},{futureCoupon20yr}')
+        if debugFlag == True:
+            try:
+                # prettyTable = PrettyTable(["Ticker", "Last Close Price", 'Last After Tax EPS', 'Last Tax Rate', 'Last Before-Tax EPS', 'Last DivYield', 'coupon', 'First Before-Tax EPS', 'Growth', 'In 5yrs', 'In 10yrs', 'In 15yrs', 'In 20yrs' ])
+                # prettyTable.add_row([f'{ticker}',f'${lastClosePrice}',f'{round(lastAfterTaxBasicEPS,2)}',f'{round(lastEffectiveTaxRate,2)}',f'{round(lastBeforeTaxBasicEPS,2)}', f'{round(lastDivYield,2)}%', f'{round(coupon,2)}%', f'{round(firstBeforeTaxBasicEPS,2)}', f'{round(growth,2)}%', futureCoupon5yr, futureCoupon10yr, futureCoupon15yr, futureCoupon20yr])
+                # print(prettyTable)
+                print(couponEquationString)
+                print(growthCalculationString)
+                #print(f'{ticker},,,,,,{round(coupon,2)},{round(growth,2)},{futureCoupon5yr},{futureCoupon10yr},{futureCoupon15yr},{futureCoupon20yr}')
+            except:
+                errorFlag += 1
         try:
-            with open('seekingAlphaLog.csv', 'a') as f:
+            with open('excel/seekingAlphaLog.csv', 'a') as f:
                 f.write(f'{ticker},,,,,,{round(coupon,2)},{round(growth,2)},{futureCoupon5yr},{futureCoupon10yr},{futureCoupon15yr},{futureCoupon20yr}\n')
 
             print(f'{ticker}:\n  Coupon: {round(coupon,2)}%\t\n  Growth: {round(growth,2)}%\t\n')
+            with open('screenOutputLog.txt', 'a') as f:
+                f.write(f'{ticker}:\n  Coupon: {round(coupon,2)}%\t\n  Growth: {round(growth,2)}%\t\n')
         except:
             errorFlag += 1
 
     if errorFlag > 0:
         print(f'**{ticker}**error {errorFlag}')
+        with open('err/errorLog.txt', 'a') as f:
+            f.write(f'**{ticker}**error {errorFlag}\n')
     else:
         try:
             futureCouponDataInsertQuery = f'INSERT INTO study_futureCoupon (companyTicker, coupon, growth, sampleDate) VALUES("{ticker}", {coupon}, {growth}, "{datetime.datetime.now()}")'       
             cursor.execute(futureCouponDataInsertQuery)
+            sqliteConnection.commit()
         except:
             pass   
     cursor.close()
@@ -955,7 +970,7 @@ if __name__ == '__main__':
             getPriceActionData(ticker)
             #calculateProjectedROI(ticker)
             #getLastClosePrice(ticker)
-            calc_futureCoupon(ticker)
+            calc_futureCoupon(ticker, debugFlag=False)
 
         return
     
@@ -972,22 +987,40 @@ if __name__ == '__main__':
                 calc_futureCoupon(ticker)
 
     def readFromTextFile():
-        for file in sys.argv[1:]:
-            tickerList = []
-            tickerStr = ''
-            with open(file, 'r') as f:
-                for item in f:
-                    # print(item.split())
-                    tickerList = item.split()
-            print(tickerList)
-            for ticker in tickerList:
-                if '$' in ticker or '^' in ticker or '~' in ticker:
-                    print(ticker)
-                else:
-                    # print(ticker)
-                    getIncomeStatementData(ticker)
-                    getPriceActionData(ticker)
-                    calc_futureCoupon(ticker)
+        if len(sys.argv) == 1:
+            for file in ['symbols_nyse.txt', 'symbols_nasdaq.txt', 'symbols_amex.txt']:
+                tickerList = []
+                tickerStr = ''
+                with open(file, 'r') as f:
+                    for item in f:
+                        # print(item.split())
+                        tickerList = item.split()
+                #print(tickerList)
+                for ticker in tickerList:
+                    if '$' in ticker or '^' in ticker or '~' in ticker:
+                        print(ticker)
+                    else:
+                        # print(ticker)
+                        getIncomeStatementData(ticker)
+                        getPriceActionData(ticker)
+                        calc_futureCoupon(ticker, debugFlag=False)
+        else:
+            for file in sys.argv[1:]:
+                tickerList = []
+                tickerStr = ''
+                with open(file, 'r') as f:
+                    for item in f:
+                        # print(item.split())
+                        tickerList = item.split()
+                #print(tickerList)
+                for ticker in tickerList:
+                    if '$' in ticker or '^' in ticker or '~' in ticker:
+                        print(ticker)
+                    else:
+                        # print(ticker)
+                        getIncomeStatementData(ticker)
+                        getPriceActionData(ticker)
+                        calc_futureCoupon(ticker, debugFlag=False)
 
     # getRealTimePrices('SCHW')
     #readFromTextFile()
@@ -997,9 +1030,9 @@ if __name__ == '__main__':
     deleteDatabase()
     rotateLog()
     ifNotExistsCreateDB()
-    readFromCommandLine()
+    #readFromCommandLine()
     #readFromCSV()
-    #readFromTextFile()
+    readFromTextFile()
     #calculateProjectedROI('AB')
 
             
