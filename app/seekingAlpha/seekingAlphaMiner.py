@@ -7,7 +7,8 @@ import pyfiglet
 from pyfiglet import figlet_format
 from PyInquirer import (Token, ValidationError, Validator, print_json, prompt, style_from_dict)
 #from pyconfigstore import ConfigStore
-
+totalSuccessCount = 0
+totalErrorCount = 0
 try:
     import colorama
     colorama.init()
@@ -99,7 +100,7 @@ def getRequestHeaders(ticker):
         'User-Agent': 'Mozilla/5.0',
         'Accept': '*/*',
         'cookie': f'{seekingAlphaProCookie}'
-        #'cookie': 'machine_cookie=4731953277079; _gcl_au=1.1.1199554884.1584215784; _pxvid=e2354d36-662d-11ea-b255-0242ac12000c; h_px=1; portfolio_sort_type=a_z; has_paid_subscription=true; ever_pro=1; user_id=51399747; user_nick=; user_devices=1; u_voc=209; marketplace_author_slugs=; user_perm=; sapu=12; user_remember_token=b663c1290b28648465ba3a9318b2ba5e8c9035fc; user_cookie_key=vhepn; _igt=3eff2345-50a2-4b60-a8c4-39cd61c4c355; _ig=9df61b54-419a-4482-cdc5-03229a410f9c; _ga=GA1.2.2136682556.1587757982; _gid=GA1.2.584912144.1587757982; ga_clientid=2136682556.1587757982; __pnahc=0; __tbc=%7Bjzx%7DlCp-P5kTOqotpgFeypItnKS3A44UHT9sb1IJ3lxi9-tdsGRLenQpOSERaaj8bTeUNfdIs_-76qPyuNAwJKCo47DY3s-wYK4D6WUV902MnXUHRK2A0IQ6GtabSFotCECnUVgFAp6l8Mpn6PJS7yCpyA; __pat=-14400000; __pvi=%7B%22id%22%3A%22v-2020-04-24-13-53-04-540-XMRlyuZeOafKa7bz-bcf2d031d41cb6b433743ba653047c89%22%2C%22domain%22%3A%22.seekingalpha.com%22%2C%22time%22%3A1587757987298%7D; xbc=%7Bjzx%7DvCGphVlY9G4xxbXMbU8IuTNHJT8Yqbk_90HouEauVQaYv8bfeCicutcYPlBHwdzy1ZubkHNyv6fLEAD6-vDWEoAg9zPeinc0DHqVA8piSbx4R-DLnTT5L3pBjNj5xQKkYi-Jf5mLolR2HyrLdfZkSV3Ytksz2sJ95qmuyU4zL9PkrBZxm_xYO9jUpIbQyW2f_AIz6V5o4jfaAvpwM2_Yiv7eCg92K16Z4rOuGrbH9bNLMAJ0FFexg1wu-Mkhj1AoTG8hAhNgJGQp7GSaonPHI8AIFVrGkvP41Ki_RUI2ZI4AG_FThVhuJP0IL71oUyMF0SnHBlGobcIZ5e7MEvgRRffWX98O0pYApIiqxmqtQXdS6Zg77YBXUbQ6ipG9T64BY55zeAhJ8O0UVdNJJKec8PAm6GzbDAptjt-JnZJfx50; _pxff_axt=540; _pxff_wa=1,702; __adblocker=true; _px2=eyJ1IjoiZjljYjc3MDAtODY3OC0xMWVhLTg5OTItZWQwZjgwNzZhMzU0IiwidiI6ImUyMzU0ZDM2LTY2MmQtMTFlYS1iMjU1LTAyNDJhYzEyMDAwYyIsInQiOjE1ODc3NjY5NzMzNjIsImgiOiI0MzAwNmU0ZGFiZDA5Yzc3NWZlZjgxZmI1N2U4ZGE0ODYxMjBlZTc1MjkzNzQ4MzAyNTZhZDJhYzlkYjczZDI2In0=; _px=1UFk9dAcIQDjrYO2j89NyN584WxgNLDjvaT8/P0q9/xUzwEJkHlGaMhWqmkn6cea+RBEggbqLx6+y+NYK0B92w==:1000:Ok0hU+SBeflq6QESBQeZGfaK1WWmMyTqv8KuDNQIf8ivAQEFXfO7LptURzbEsnPbE+g77f1lHUckIGKHu6LaWa8t7OhjE38HxSJd+qEmDn4wZU3gRgziEWCLLVSq7sxcYKXj0uMOgpicXT5f5A/+s6Q7DQuZRDX00ftllKw6Ne0zdIYEv75z3TS0VelWOPCDsuJM1rfhn60UvBbw6nEbLKcRAeW7k4eyP4z9CeVi7IIBe0SjW//KSW9mwWTw12IvigKq1OHZO7mWg679nD/Y8w==; _pxde=ca77bdecb75957e177e3bf4c87ca8c1d5e2c32ef6b70926ffb9698baace9a54f:eyJ0aW1lc3RhbXAiOjE1ODc3NjY0OTE5NzIsImZfa2IiOjAsImZfdHlwZSI6InciLCJmX2lkIjoiMjE0NTMyNGYtZjRmZC00MGUyLTljZWQtMzJmZTdkMmU2MWJjIiwiZl9vcmlnaW4iOiJjdXN0b20ifQ==; gk_user_access=1*archived*1587766496; gk_user_access_sign=bd71b99f8e0161e0eae23c03a3ba0c446bcbdb82'
+        # 'cookie': 'machine_cookie=4731953277079; _gcl_au=1.1.1199554884.1584215784; _pxvid=e2354d36-662d-11ea-b255-0242ac12000c; h_px=1; portfolio_sort_type=a_z; has_paid_subscription=true; ever_pro=1; user_id=51399747; user_nick=; user_devices=1; u_voc=209; marketplace_author_slugs=; user_perm=; sapu=12; user_remember_token=b663c1290b28648465ba3a9318b2ba5e8c9035fc; user_cookie_key=vhepn; _igt=3eff2345-50a2-4b60-a8c4-39cd61c4c355; _ig=9df61b54-419a-4482-cdc5-03229a410f9c; _ga=GA1.2.2136682556.1587757982; _gid=GA1.2.584912144.1587757982; ga_clientid=2136682556.1587757982; __pnahc=0; __tbc=%7Bjzx%7DlCp-P5kTOqotpgFeypItnKS3A44UHT9sb1IJ3lxi9-tdsGRLenQpOSERaaj8bTeUNfdIs_-76qPyuNAwJKCo47DY3s-wYK4D6WUV902MnXUHRK2A0IQ6GtabSFotCECnUVgFAp6l8Mpn6PJS7yCpyA; __pat=-14400000; __pvi=%7B%22id%22%3A%22v-2020-04-24-13-53-04-540-XMRlyuZeOafKa7bz-bcf2d031d41cb6b433743ba653047c89%22%2C%22domain%22%3A%22.seekingalpha.com%22%2C%22time%22%3A1587757987298%7D; xbc=%7Bjzx%7DvCGphVlY9G4xxbXMbU8IuTNHJT8Yqbk_90HouEauVQaYv8bfeCicutcYPlBHwdzy1ZubkHNyv6fLEAD6-vDWEoAg9zPeinc0DHqVA8piSbx4R-DLnTT5L3pBjNj5xQKkYi-Jf5mLolR2HyrLdfZkSV3Ytksz2sJ95qmuyU4zL9PkrBZxm_xYO9jUpIbQyW2f_AIz6V5o4jfaAvpwM2_Yiv7eCg92K16Z4rOuGrbH9bNLMAJ0FFexg1wu-Mkhj1AoTG8hAhNgJGQp7GSaonPHI8AIFVrGkvP41Ki_RUI2ZI4AG_FThVhuJP0IL71oUyMF0SnHBlGobcIZ5e7MEvgRRffWX98O0pYApIiqxmqtQXdS6Zg77YBXUbQ6ipG9T64BY55zeAhJ8O0UVdNJJKec8PAm6GzbDAptjt-JnZJfx50; _pxff_axt=540; _pxff_wa=1,702; __adblocker=true; _px2=eyJ1IjoiZjljYjc3MDAtODY3OC0xMWVhLTg5OTItZWQwZjgwNzZhMzU0IiwidiI6ImUyMzU0ZDM2LTY2MmQtMTFlYS1iMjU1LTAyNDJhYzEyMDAwYyIsInQiOjE1ODc3NjY5NzMzNjIsImgiOiI0MzAwNmU0ZGFiZDA5Yzc3NWZlZjgxZmI1N2U4ZGE0ODYxMjBlZTc1MjkzNzQ4MzAyNTZhZDJhYzlkYjczZDI2In0=; _px=1UFk9dAcIQDjrYO2j89NyN584WxgNLDjvaT8/P0q9/xUzwEJkHlGaMhWqmkn6cea+RBEggbqLx6+y+NYK0B92w==:1000:Ok0hU+SBeflq6QESBQeZGfaK1WWmMyTqv8KuDNQIf8ivAQEFXfO7LptURzbEsnPbE+g77f1lHUckIGKHu6LaWa8t7OhjE38HxSJd+qEmDn4wZU3gRgziEWCLLVSq7sxcYKXj0uMOgpicXT5f5A/+s6Q7DQuZRDX00ftllKw6Ne0zdIYEv75z3TS0VelWOPCDsuJM1rfhn60UvBbw6nEbLKcRAeW7k4eyP4z9CeVi7IIBe0SjW//KSW9mwWTw12IvigKq1OHZO7mWg679nD/Y8w==; _pxde=ca77bdecb75957e177e3bf4c87ca8c1d5e2c32ef6b70926ffb9698baace9a54f:eyJ0aW1lc3RhbXAiOjE1ODc3NjY0OTE5NzIsImZfa2IiOjAsImZfdHlwZSI6InciLCJmX2lkIjoiMjE0NTMyNGYtZjRmZC00MGUyLTljZWQtMzJmZTdkMmU2MWJjIiwiZl9vcmlnaW4iOiJjdXN0b20ifQ==; gk_user_access=1*archived*1587766496; gk_user_access_sign=bd71b99f8e0161e0eae23c03a3ba0c446bcbdb82'
     }
 
     return headers
@@ -117,6 +118,7 @@ def log(string, color, font="slant", figlet=False):
                 string, font=font), color))
     else:
         six.print_(string)
+        
 
 
 
@@ -562,7 +564,7 @@ def getLastClosePrice(ticker):
     databaseName = getDatabaseName()
     sqliteConnection = sqlite3.connect(databaseName)
     cursor = sqliteConnection.cursor()
-    lastClosePriceQuery = f'select close, MAX(date) as date from priceAction where companyTicker = "{ticker}"'
+    lastClosePriceQuery = f'select close, MAX(date) as date from priceAction where companyTicker = "{ticker}" AND close != "nan"; '
     lastClosePriceData = cursor.execute(lastClosePriceQuery).fetchall()
     lastClosePrice = lastClosePriceData[0][0]
     lastCloseDate = lastClosePriceData[0][1]
@@ -577,7 +579,7 @@ def getFirstBasicEarningsPerShare(ticker):
     sqliteConnection = sqlite3.connect(databaseName)
     cursor = sqliteConnection.cursor()
     
-    firstBasicEPS_query = f'select MIN(date) as date, rawValue as firstBasicEPS from incomeStatements where companyTicker = "{ticker}" and lineitemname = "Basic EPS" and timeScale = "annual";'
+    firstBasicEPS_query = f'select MIN(date) as date, rawValue as firstBasicEPS from incomeStatements where companyTicker = "{ticker}" and lineitemname = "Basic EPS" and timeScale = "annual" AND rawvalue != "nan"; '
     firstBasicEPSData = cursor.execute(firstBasicEPS_query).fetchall()
     firstBasicEPS = firstBasicEPSData[0][1]
     # print(f'first after-tax EPS: {firstBasicEPS}')
@@ -589,7 +591,7 @@ def getLastBasicEarningsPerShare(ticker):
     databaseName = getDatabaseName()
     sqliteConnection = sqlite3.connect(databaseName)
     cursor = sqliteConnection.cursor()
-    lastBasicEarningsPerShareQuery = f'select rawValue as eps,MAX(date) as date from incomeStatements where companyTicker = "{ticker}" and lineitemname = "Basic EPS" and timeScale = "annual";'
+    lastBasicEarningsPerShareQuery = f'select rawValue as eps,MAX(date) as date from incomeStatements where companyTicker = "{ticker}" and lineitemname = "Basic EPS" and timeScale = "annual" AND rawvalue != "nan";'
     lastBasicEarningsPerShareData = cursor.execute(lastBasicEarningsPerShareQuery).fetchall()
     lastBasicEarningsPerShare = lastBasicEarningsPerShareData[0][0]
 
@@ -602,7 +604,7 @@ def getFirstEffectiveTaxRate(ticker):
     sqliteConnection = sqlite3.connect(databaseName)
     cursor = sqliteConnection.cursor()
     
-    firstTaxRateQuery = f'select rawValue as firstTaxRate,MIN(date) as date from incomeStatements where companyTicker = "{ticker}" and lineitemname = "Effective Tax Rate" and timeScale = "annual";'
+    firstTaxRateQuery = f'select rawValue as firstTaxRate,MIN(date) as date from incomeStatements where companyTicker = "{ticker}" and lineitemname = "Effective Tax Rate" and timeScale = "annual" AND rawvalue != "nan";'
     firstTaxRateData = cursor.execute(firstTaxRateQuery).fetchall()
     
     if 'None' in str(firstTaxRateData[0][0]):
@@ -619,7 +621,7 @@ def getLastEffectiveTaxRate(ticker):
     sqliteConnection = sqlite3.connect(databaseName)
     cursor = sqliteConnection.cursor()
 
-    effectiveTaxRateQuery = f'select rawvalue as effectiveTaxRate, MAX(date) from incomeStatements where companyTicker = "{ticker}" and lineitemname = "Effective Tax Rate" and timeScale = "annual";'
+    effectiveTaxRateQuery = f'select rawvalue as effectiveTaxRate, MAX(date) from incomeStatements where companyTicker = "{ticker}" and lineitemname = "Effective Tax Rate" and timeScale = "annual" AND rawvalue != "nan";'
     lastEffectiveTaxRateData = cursor.execute(effectiveTaxRateQuery).fetchall()
     
     if 'None' in str(lastEffectiveTaxRateData[0][0]):
@@ -635,7 +637,7 @@ def getLastDividendPerShare(ticker):
     databaseName = getDatabaseName()
     sqliteConnection = sqlite3.connect(databaseName)
     cursor = sqliteConnection.cursor()
-    divPerShareQuery = f'select MAX(date), rawvalue as divPerShare from incomeStatements where lineitemname = "Dividend Per Share" and companyTicker = "{ticker}" and timeScale = "annual"; '
+    divPerShareQuery = f'select MAX(date), rawvalue as divPerShare from incomeStatements where lineitemname = "Dividend Per Share" and companyTicker = "{ticker}" and timeScale = "annual" AND rawvalue != "nan"; '
     lastDivPerShareData = cursor.execute(divPerShareQuery).fetchall()
     lastDivPerShare = lastDivPerShareData[0][1]
     if lastDivPerShare == None:
@@ -652,7 +654,7 @@ def getAnnualIncomeStatementDateRange(ticker):
     sqliteConnection = sqlite3.connect(databaseName)
     cursor = sqliteConnection.cursor()
     
-    countDistinctAnnualTimeScaleDates = f'select count(distinct(date)) from incomeStatements where companyTicker = "{ticker}" and timeScale = "annual";'
+    countDistinctAnnualTimeScaleDates = f'select count(distinct(date)) from incomeStatements where companyTicker = "{ticker}" and timeScale = "annual" AND rawvalue != "nan";'
     queryData = cursor.execute(countDistinctAnnualTimeScaleDates).fetchall()
     numberOfDates = queryData[0][0]
     
@@ -670,14 +672,19 @@ def getAnnualIncomeStatementDateRange(ticker):
 ######  ### ####### #     # #######  #####   #####     ####### #######  #####  ###  #####  
 #########################################################################
 
+#https://www.journaldev.com/23365/python-string-to-datetime-strptime
+
 def calc_futureCoupon(ticker, debugFlag):
     databaseName = getDatabaseName()
     sqliteConnection = sqlite3.connect(databaseName)
     cursor = sqliteConnection.cursor()
     errorFlag = 0
+    errorMsg = ''
     lastClosePrice = getLastClosePrice(ticker)
     if 'None' in str(lastClosePrice):
         print(f'Price not found for : {ticker}')
+        errorFlag += 1
+        errorMsg += f'Price not found for {ticker}\n'
     else:
         lastAfterTaxBasicEPS = getLastBasicEarningsPerShare(ticker)
         lastEffectiveTaxRate = getLastEffectiveTaxRate(ticker)
@@ -688,8 +695,8 @@ def calc_futureCoupon(ticker, debugFlag):
                 lastAfterTaxBasicEPS = str(lastAfterTaxBasicEPS).strip('-')
                 if lastEffectiveTaxRate == 0:
                     lastBeforeTaxBasicEPS = -(float(lastAfterTaxBasicEPS))
-                    if debugFlag ==True:
-                        print(f'lastBeforeTaxBasicEPS = -(float({lastAfterTaxBasicEPS}))')
+                    # if debugFlag ==True:
+                    #     print(f'lastBeforeTaxBasicEPS = -(float({lastAfterTaxBasicEPS}))')
                 else:
                     lastBeforeTaxBasicEPS = -(float(lastAfterTaxBasicEPS) / (1 - (lastEffectiveTaxRate/100)))
             else:
@@ -697,33 +704,52 @@ def calc_futureCoupon(ticker, debugFlag):
                     lastBeforeTaxBasicEPS = float(lastAfterTaxBasicEPS)
                 else:
                     lastBeforeTaxBasicEPS = float(lastAfterTaxBasicEPS) / (1 - (lastEffectiveTaxRate/100))
-            if debugFlag == True:
-                print(f'Last Effective Tax Rate: {lastEffectiveTaxRate}\n')
-                print(f'Last After Tax Basic EPS: {lastAfterTaxBasicEPS}\n')
+            # if debugFlag == True:
+                # print(f'Last Effective Tax Rate: {lastEffectiveTaxRate}\n')
+                # print(f'Last After Tax Basic EPS: {lastAfterTaxBasicEPS}\n')
         except:
             errorFlag += 1
+            errorMsg += 'Error in last effective tax rate and last before tax EPS eq\n'
+            # print('error in last before tax EPS eq')
+            # if debugFlag == True:
+            #     print(f'Last Effective Tax Rate: {lastEffectiveTaxRate}\n')
+            #     print(f'Last After Tax Basic EPS: {lastAfterTaxBasicEPS}\n')
+            #     print(f'Last Before Tax Basic EPS: {lastBeforeTaxBasicEPS}\n')
+
 
         
         # print(lastBeforeTaxBasicEPS)
         
         lastDivPerShare = getLastDividendPerShare(ticker)
-        # print(lastDivPerShare)
+        # if debugFlag == True:
+        #     print(lastDivPerShare)
         try:
             lastDivYieldEquationString = f'({lastDivPerShare}/{lastClosePrice})*100'
         except:
             errorFlag += 1
-        # print(f'Dividend Yield Equation: {lastDivYieldEquationString}')
+            errorMsg += 'Last Div Yield eq error\n'
+            # if debugFlag == True:
+            #     print(f'Dividend Yield Equation: {lastDivYieldEquationString}')
         
         try:
             lastDivYield = (lastDivPerShare/lastClosePrice)*100
         except:
             lastDivYield = 0
             errorFlag += 1
+            errorMsg += 'Error in Div Yield computation\n'
+            # print('error in div yield eq')
+
+        # if debugFlag == True:
+        #     print(f'Last Div Yield: {lastDivYield}')
 
         try:
             couponEquationString = f'({lastBeforeTaxBasicEPS} / {lastClosePrice})*100) + {lastDivYield}'
         except:
             errorFlag += 1
+            errorMsg += 'Coupon Eq error\n'
+
+        # if debugFlag == True:
+        #     print(f'Coupon Equation String: {couponEquationString}')
         
         # print(f'Coupon Equation: {couponEquationString}')
         try:
@@ -731,6 +757,8 @@ def calc_futureCoupon(ticker, debugFlag):
         except:
             coupon = 0
             errorFlag += 1
+            errorMsg += 'Coupon computation error\n'
+            # print('error in coupon eq')
 
         firstAfterTaxBasicEPS = getFirstBasicEarningsPerShare(ticker)
         firstEffectiveTaxRate = getFirstEffectiveTaxRate(ticker)
@@ -752,13 +780,15 @@ def calc_futureCoupon(ticker, debugFlag):
                     firstBeforeTaxBasicEPS = float(firstAfterTaxBasicEPS) / (1 - (firstEffectiveTaxRate/100))
         except:
             errorFlag += 1
+            errorMsg += 'Error in first effective tax rate and first before tax EPS eq\n'
+            # print('error in first before tax EPS eq')
 
         numberOfDatesForTicker = getAnnualIncomeStatementDateRange(ticker)
         numberOfPeriods = float(numberOfDatesForTicker) - 1
         
         try:
             growthCalculationString = f'(({lastBeforeTaxBasicEPS}/{firstBeforeTaxBasicEPS})^(1/{numberOfPeriods})-1)*100'
-            growth = round(((float(lastBeforeTaxBasicEPS)/float(firstBeforeTaxBasicEPS))**(1/numberOfPeriods)-1)*100, 2) # TODO: need to dynamically calculate period in exponent
+            growth = round(((float(lastBeforeTaxBasicEPS)/float(firstBeforeTaxBasicEPS))**(1/numberOfPeriods)-1)*100, 2) # https://www.wikihow.com/Calculate-an-Annual-Percentage-Growth-Rate
 
             futureCoupon5yr = ''
             futureCoupon10yr = ''
@@ -781,18 +811,22 @@ def calc_futureCoupon(ticker, debugFlag):
         except:
             growth = 0
             errorFlag += 1
+            errorMsg += 'Error in Growth Eq\n'
+            # print('error in growth eq')
 
         #TODO: consistency printing out percentages and dollar amounts and displaying in screen output
         if debugFlag == True:
             try:
-                # prettyTable = PrettyTable(["Ticker", "Last Close Price", 'Last After Tax EPS', 'Last Tax Rate', 'Last Before-Tax EPS', 'Last DivYield', 'coupon', 'First Before-Tax EPS', 'Growth', 'In 5yrs', 'In 10yrs', 'In 15yrs', 'In 20yrs' ])
-                # prettyTable.add_row([f'{ticker}',f'${lastClosePrice}',f'{round(lastAfterTaxBasicEPS,2)}',f'{round(lastEffectiveTaxRate,2)}',f'{round(lastBeforeTaxBasicEPS,2)}', f'{round(lastDivYield,2)}%', f'{round(coupon,2)}%', f'{round(firstBeforeTaxBasicEPS,2)}', f'{round(growth,2)}%', futureCoupon5yr, futureCoupon10yr, futureCoupon15yr, futureCoupon20yr])
-                # print(prettyTable)
-                print(couponEquationString)
-                print(growthCalculationString)
+                prettyTable = PrettyTable(["Ticker", "Last Close Price", 'Last After Tax EPS', 'Last Tax Rate', 'Last Before-Tax EPS', 'Last DivYield', 'coupon', 'First Before-Tax EPS', 'Growth', 'In 5yrs', 'In 10yrs', 'In 15yrs', 'In 20yrs' ])
+                prettyTable.add_row([f'{ticker}',f'${lastClosePrice}',f'{round(lastAfterTaxBasicEPS,2)}',f'{round(lastEffectiveTaxRate,2)}',f'{round(lastBeforeTaxBasicEPS,2)}', f'{round(lastDivYield,2)}%', f'{round(coupon,2)}%', f'{round(firstBeforeTaxBasicEPS,2)}', f'{round(growth,2)}%', futureCoupon5yr, futureCoupon10yr, futureCoupon15yr, futureCoupon20yr])
+                print(prettyTable)
+                print(f'Coupon Equation: {couponEquationString} == (lastBeforeTaxBasicEPS / lastClosePrice)*100) + lastDivYield')
+                print(f'Growth Equation: {growthCalculationString} == ((lastBeforeTaxBasicEPS/firstBeforeTaxBasicEPS)^(1/numberOfPeriods)-1)*100')
                 #print(f'{ticker},,,,,,{round(coupon,2)},{round(growth,2)},{futureCoupon5yr},{futureCoupon10yr},{futureCoupon15yr},{futureCoupon20yr}')
             except:
                 errorFlag += 1
+                errorMsg += 'Error printing debug info\n'
+                # print("debug output")
         try:
             with open('excel/seekingAlphaLog.csv', 'a') as f:
                 f.write(f'{ticker},,,,,,{round(coupon,2)},{round(growth,2)},{futureCoupon5yr},{futureCoupon10yr},{futureCoupon15yr},{futureCoupon20yr}\n')
@@ -802,18 +836,25 @@ def calc_futureCoupon(ticker, debugFlag):
                 f.write(f'{ticker}:\n  Coupon: {round(coupon,2)}%\t\n  Growth: {round(growth,2)}%\t\n')
         except:
             errorFlag += 1
+            errorMsg += 'Error in logging to file\n'
+            # print('log output')
 
     if errorFlag > 0:
-        print(f'**{ticker}**error {errorFlag}')
+        # print(f'**{ticker}**error {errorFlag}')
+        # totalErrorCount += 1
         with open('err/errorLog.txt', 'a') as f:
-            f.write(f'**{ticker}**error {errorFlag}\n')
+            f.write(f'**{ticker}**error {errorFlag}\n{errorMsg}')
     else:
         try:
             futureCouponDataInsertQuery = f'INSERT INTO study_futureCoupon (companyTicker, coupon, growth, sampleDate) VALUES("{ticker}", {coupon}, {growth}, "{datetime.datetime.now()}")'       
             cursor.execute(futureCouponDataInsertQuery)
             sqliteConnection.commit()
+            # totalSuccessCount += 1
         except:
-            pass   
+            # totalErrorCount += 1
+            errorFlag += 1
+            errorMsg += 'Error inserting to study_futureCoupon'   
+            # print(errorMsg)
     cursor.close()
     sqliteConnection.close()
     return #prettyTable
@@ -940,11 +981,99 @@ def calculateProjectedROI(ticker):
 
 
 
+def executeTickerList(tickerList, debugBool):
+    for ticker in tickerList:
+        # print(ticker)
+        #getCompanyFinancialData(ticker)
+        getIncomeStatementData(ticker)
+        getPriceActionData(ticker)
+        #calculateProjectedROI(ticker)
+        #getLastClosePrice(ticker)
+        calc_futureCoupon(ticker, debugFlag=debugBool)
+    return
+
+def readFromTextFile(fileList, debugBool):
+    if len(sys.argv) == []:
+        for file in ['symbols_nyse.txt', 'symbols_nasdaq.txt', 'symbols_amex.txt']:
+            tickerList = []
+            tickerStr = ''
+            with open(file, 'r') as f:
+                for item in f:
+                    # print(item.split())
+                    tickerList = item.split()
+            #print(tickerList)
+            for ticker in tickerList:
+                if '$' in ticker or '^' in ticker or '~' in ticker:
+                    print(ticker)
+                else:
+                    # print(ticker)
+                    getIncomeStatementData(ticker)
+                    getPriceActionData(ticker)
+                    calc_futureCoupon(ticker, debugFlag=debugBool)
+    else:
+        for file in fileList:
+            tickerList = []
+            tickerStr = ''
+            with open(file, 'r') as f:
+                for item in f:
+                    # print(item.split())
+                    tickerList = item.split()
+            #print(tickerList)
+            for ticker in tickerList:
+                if '$' in ticker or '^' in ticker or '~' in ticker:
+                    print(ticker)
+                else:
+                    # print(ticker)
+                    getIncomeStatementData(ticker)
+                    getPriceActionData(ticker)
+                    calc_futureCoupon(ticker, debugFlag=debugBool)
+
+def readFromCSV():
+    tickerList_df = pd.read_csv('NYSE.csv', sep=',')
+    #print(tickerList_df['Symbol'])
+    for ticker in tickerList_df['Symbol']:
+        if '$' in ticker or '^' in ticker or '~' in ticker:
+            print(ticker)
+        else:
+            # print(ticker)
+            getIncomeStatementData(ticker)
+            getPriceActionData(ticker)
+            calc_futureCoupon(ticker)
+    return
+
+
 # @click.group()
 # @click.pass_context()
-# def main(ctx):
+def main():
+    # parser = argparse.ArgumentParser(description=f'{log("Profit Hawk", color="red", figlet=True)}')
+    parser = argparse.ArgumentParser(description=f'SA Miner CLI')
 
-#     return
+    
+    tickerList = []; fileList = ''; debugFlag = ''; # TODO: What is metavar property used for in argparse?
+    parser.add_argument('-d', '--debug',action='store_true', help='Signal True Dubug Flag for detailed output and logging')
+    parser.add_argument('-t', '--ticker',action='store',type=str,metavar=tickerList, nargs='+', help='Provide 1 to * space delimited tickers') # + indicates 1 to many arguments; https://stackoverflow.com/questions/20165843/argparse-how-to-handle-variable-number-of-arguments-nargs
+    #parser.add_argument('-f', '--file', type=str, nargs=1, metavar=fileList, default=None,help='Provide 1 to * space delimited filenames with tickers')
+    parser.add_argument('-f', '--file',action='store',type=str,nargs='+', help='Provide 1 to * space delimited files, containing space delimited tickers')
+    #parser.add_argument('-d', '--debug', type=str, nargs=1, metavar=debugFlag, default=True, help='Signal to print debug detail info to screen and logfile')
+
+    args = parser.parse_args()
+
+    debugBool = False
+    if args.debug:
+        # print('debug')
+        debugBool = True
+    
+    if args.file:
+        # print('file')
+        readFromTextFile(args.file, debugBool)
+    elif args.ticker:
+        # print('ticker')
+        executeTickerList(args.ticker, debugBool)
+    else:
+        print('Nothing')
+
+    
+    return
 
 # @main.command()
 # @click.pass_context()
@@ -959,81 +1088,87 @@ def calculateProjectedROI(ticker):
 # def start():
 #     main(obj={})
 
+#TODO: https://codeburst.io/building-beautiful-command-line-interfaces-with-python-26c7e1bb54df
 if __name__ == '__main__':   
     #print(len(sys.argv))
     ifNotExistsCreateDB()
-    def readFromCommandLine():
-        for ticker in sys.argv[1:]:
-            # print(ticker)
-            #getCompanyFinancialData(ticker)
-            getIncomeStatementData(ticker)
-            getPriceActionData(ticker)
-            #calculateProjectedROI(ticker)
-            #getLastClosePrice(ticker)
-            calc_futureCoupon(ticker, debugFlag=False)
+    # def readFromCommandLine():
+    #     for ticker in sys.argv[1:]:
+    #         # print(ticker)
+    #         #getCompanyFinancialData(ticker)
+    #         getIncomeStatementData(ticker)
+    #         getPriceActionData(ticker)
+    #         #calculateProjectedROI(ticker)
+    #         #getLastClosePrice(ticker)
+    #         calc_futureCoupon(ticker, debugFlag=True)
 
-        return
+    #     return
     
-    def readFromCSV():
-        tickerList_df = pd.read_csv('NYSE.csv', sep=',')
-        #print(tickerList_df['Symbol'])
-        for ticker in tickerList_df['Symbol']:
-            if '$' in ticker or '^' in ticker or '~' in ticker:
-                print(ticker)
-            else:
-                # print(ticker)
-                getIncomeStatementData(ticker)
-                getPriceActionData(ticker)
-                calc_futureCoupon(ticker)
+    # def readFromCSV():
+    #     tickerList_df = pd.read_csv('NYSE.csv', sep=',')
+    #     #print(tickerList_df['Symbol'])
+    #     for ticker in tickerList_df['Symbol']:
+    #         if '$' in ticker or '^' in ticker or '~' in ticker:
+    #             print(ticker)
+    #         else:
+    #             # print(ticker)
+    #             getIncomeStatementData(ticker)
+    #             getPriceActionData(ticker)
+    #             calc_futureCoupon(ticker)
+    #     return
 
-    def readFromTextFile():
-        if len(sys.argv) == 1:
-            for file in ['symbols_nyse.txt', 'symbols_nasdaq.txt', 'symbols_amex.txt']:
-                tickerList = []
-                tickerStr = ''
-                with open(file, 'r') as f:
-                    for item in f:
-                        # print(item.split())
-                        tickerList = item.split()
-                #print(tickerList)
-                for ticker in tickerList:
-                    if '$' in ticker or '^' in ticker or '~' in ticker:
-                        print(ticker)
-                    else:
-                        # print(ticker)
-                        getIncomeStatementData(ticker)
-                        getPriceActionData(ticker)
-                        calc_futureCoupon(ticker, debugFlag=False)
-        else:
-            for file in sys.argv[1:]:
-                tickerList = []
-                tickerStr = ''
-                with open(file, 'r') as f:
-                    for item in f:
-                        # print(item.split())
-                        tickerList = item.split()
-                #print(tickerList)
-                for ticker in tickerList:
-                    if '$' in ticker or '^' in ticker or '~' in ticker:
-                        print(ticker)
-                    else:
-                        # print(ticker)
-                        getIncomeStatementData(ticker)
-                        getPriceActionData(ticker)
-                        calc_futureCoupon(ticker, debugFlag=False)
+    # def readFromTextFile(debugBool):
+        # if len(sys.argv) == 1:
+        #     for file in ['symbols_nyse.txt', 'symbols_nasdaq.txt', 'symbols_amex.txt']:
+        #         tickerList = []
+        #         tickerStr = ''
+        #         with open(file, 'r') as f:
+        #             for item in f:
+        #                 # print(item.split())
+        #                 tickerList = item.split()
+        #         #print(tickerList)
+        #         for ticker in tickerList:
+        #             if '$' in ticker or '^' in ticker or '~' in ticker:
+        #                 print(ticker)
+        #             else:
+        #                 # print(ticker)
+        #                 getIncomeStatementData(ticker)
+        #                 getPriceActionData(ticker)
+        #                 calc_futureCoupon(ticker, debugFlag=debugBool)
+        # else:
+        #     for file in sys.argv[1:]:
+        #         tickerList = []
+        #         tickerStr = ''
+        #         with open(file, 'r') as f:
+        #             for item in f:
+        #                 # print(item.split())
+        #                 tickerList = item.split()
+        #         #print(tickerList)
+        #         for ticker in tickerList:
+        #             if '$' in ticker or '^' in ticker or '~' in ticker:
+        #                 print(ticker)
+        #             else:
+        #                 # print(ticker)
+        #                 getIncomeStatementData(ticker)
+        #                 getPriceActionData(ticker)
+        #                 calc_futureCoupon(ticker, debugFlag=debugBool)
 
+    
     # getRealTimePrices('SCHW')
     #readFromTextFile()
     #getCompanyFinancialData('SCHW')
     # calculateProjectedROI('SCHW')
     #log("Profit Hawk", color="red", figlet=True)
-    deleteDatabase()
-    rotateLog()
-    ifNotExistsCreateDB()
-    #readFromCommandLine()
-    #readFromCSV()
-    readFromTextFile()
+    # deleteDatabase()
+    # rotateLog()
+    # ifNotExistsCreateDB()
+    # #readFromCommandLine()
+    # #readFromCSV()
+    # readFromTextFile(debugBool=True)
     #calculateProjectedROI('AB')
 
+    main()
+    print(f'Tickers successfully processed: {totalSuccessCount}')
+    print(f'Tickers exited with error: {totalErrorCount}')
             
         
