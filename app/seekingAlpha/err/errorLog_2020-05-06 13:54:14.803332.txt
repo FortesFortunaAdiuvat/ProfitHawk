@@ -1,0 +1,8 @@
+**ATV**error 4
+**BGT**error 6
+**BHK**error 6
+**EAB**error 3
+**EAI**error 3
+**EMP**error 6
+**ENO**error 6
+**TSLA**error 6
