@@ -90,7 +90,7 @@ def getSeekingAlphaProCookie():
         # print(seekingAlphaProCookie)
     else:
         seekingAlphaProCookie = ''
-    return seekingAlphaProCookie
+    return seekingAlphaProCookie 
 
 def getRequestHeaders(ticker):
     seekingAlphaProCookie = getSeekingAlphaProCookie()
@@ -616,15 +616,15 @@ def getFirstEffectiveTaxRate(ticker):
     sqliteConnection.close()
     return firstEffectiveTaxRate
 
-def getLastEffectiveTaxRate(ticker):
+def getLastEffectiveTaxRate(ticker): #TODO: Handle if last 2019 tax rate is 'nan', then it should be zero
     databaseName = getDatabaseName()
     sqliteConnection = sqlite3.connect(databaseName)
     cursor = sqliteConnection.cursor()
 
-    effectiveTaxRateQuery = f'select rawvalue as effectiveTaxRate, MAX(date) from incomeStatements where companyTicker = "{ticker}" and lineitemname = "Effective Tax Rate" and timeScale = "annual" AND rawvalue != "nan";'
+    effectiveTaxRateQuery = f'select rawvalue as effectiveTaxRate, MAX(date) from incomeStatements where companyTicker = "{ticker}" and lineitemname = "Effective Tax Rate" and timeScale = "annual" ;'
     lastEffectiveTaxRateData = cursor.execute(effectiveTaxRateQuery).fetchall()
     
-    if 'None' in str(lastEffectiveTaxRateData[0][0]):
+    if 'None' in str(lastEffectiveTaxRateData[0][0]) or 'nan' in str(lastEffectiveTaxRateData[0][0]):
         lastEffectiveTaxRate = 0
     else:
         lastEffectiveTaxRate = lastEffectiveTaxRateData[0][0]
