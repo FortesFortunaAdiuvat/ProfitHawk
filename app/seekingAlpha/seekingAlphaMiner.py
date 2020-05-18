@@ -1,4 +1,5 @@
 import sqlite3, requests, datetime, re, json, argparse, os, sys, six
+#from bs4 import BeautifulSoup
 import pandas as pd
 import numpy as np
 import time
@@ -120,7 +121,23 @@ def log(string, color, font="slant", figlet=False):
         six.print_(string)
         
 
+#     # ####### ######      #####   #####  ######     #    ######  ####### ######   #####  
+#  #  # #       #     #    #     # #     # #     #   # #   #     # #       #     # #     # 
+#  #  # #       #     #    #       #       #     #  #   #  #     # #       #     # #       
+#  #  # #####   ######      #####  #       ######  #     # ######  #####   ######   #####  
+#  #  # #       #     #          # #       #   #   ####### #       #       #   #         # 
+#  #  # #       #     #    #     # #     # #    #  #     # #       #       #    #  #     # 
+ ## ##  ####### ######      #####   #####  #     # #     # #       ####### #     #  #####  
 
+def getCompanyOverviewData(ticker):
+    url = f'https://seekingalpha.com/symbol/{ticker}/overview'
+    headers = getRequestHeaders(ticker)
+    overviewPage = requests.get(url=url, headers=headers)
+    print(overviewPage.status_code)
+    # soup = BeautifulSoup(overviewPage.content, 'html.parser')
+    # print(soup)
+    
+    return overviewPage.status_code
 
 ########################################################################
 #      #    ######  ###    #     # ### #     # ####### ######   #####   #
@@ -149,7 +166,7 @@ def getBalanceSheetData(ticker):
         pass
 
     if balanceSheetRes.status_code == 200 and len(companyAnnualBalanceSheet['data']) != 0:
-        for datum in companyAnnualBalanceSheet['data']: # there is one list of objects per line item, # TODO: cutting off final list item, Supplimental Info is a different data model
+        for datum in companyAnnualBalanceSheet['data']: # there is one list of objects per line item
             for item in datum:
                 for cell in item:
                     if cell['class'].startswith('left-label'):
@@ -201,7 +218,7 @@ def getBalanceSheetData(ticker):
 
     #time.sleep(5)    
     balanceSheetQuarterlyRes = requests.get(url=balanceSheetQuarterlyURL, headers=headers)
-    print(balanceSheetQuarterlyRes.status_code)
+    # print(balanceSheetQuarterlyRes.status_code)
     companyQuarterlyBalanceSheet = {}
     try:
         companyQuarterlyBalanceSheet = balanceSheetQuarterlyRes.json()
@@ -272,7 +289,7 @@ def getCashFlowData(ticker):
     cashFlowAnnualURL = f'https://seekingalpha.com/symbol/{ticker}/financials-data?period_type=quarterly&statement_type=cash-flow-statement&order_type=latest_left&is_pro=True'
     cashFlowQuarterlyURL = f'https://seekingalpha.com/symbol/{ticker}/financials-data?period_type=quarterly&statement_type=cash-flow-statement&order_type=latest_left&is_pro=True'
     cashFlowAnnualRes = requests.get(url=cashFlowAnnualURL, headers=headers)
-    print(cashFlowAnnualRes.status_code)
+    # print(cashFlowAnnualRes.status_code)
     companyAnnualCashFlow = {}
     try:
         companyAnnualCashFlow = cashFlowAnnualRes.json()
@@ -314,7 +331,7 @@ def getCashFlowData(ticker):
                         sqliteConnection.commit()
     #time.sleep(5)
     cashFlowQuarterlyRes = requests.get(url=cashFlowQuarterlyURL, headers=headers)
-    print(cashFlowQuarterlyRes.status_code)
+    # print(cashFlowQuarterlyRes.status_code)
     companyQuarterlyCashFlow = {}
     try:
         companyQuarterlyCashFlow = cashFlowQuarterlyRes.json()
@@ -536,10 +553,10 @@ def getPriceActionData(ticker):
         high52Week = datum['attributes']['high52Week']
         lastCloseDateTime = datum['attributes']['dateTime']
         low = datum['attributes']['low']
-        open = datum['attributes']['open']
+        openPrice = datum['attributes']['open']
         high = datum['attributes']['high']
         previousClose = datum['attributes']['previousClose']
-        recordInsertQuery = f'INSERT INTO priceAction (companyTicker ,date, open , high , low , close, previousClose, low52Week, high52Week) VALUES ("{ticker}","{lastCloseDateTime}", {open}, {high}, {low}, {lastClose}, {previousClose}, {low52Week}, {high52Week});'
+        recordInsertQuery = f'INSERT INTO priceAction (companyTicker ,date, open , high , low , close, previousClose, low52Week, high52Week) VALUES ("{ticker}","{lastCloseDateTime}", {openPrice}, {high}, {low}, {lastClose}, {previousClose}, {low52Week}, {high52Week});'
         try:
             cursor.execute(recordInsertQuery)
         except:
@@ -616,7 +633,7 @@ def getFirstEffectiveTaxRate(ticker):
     sqliteConnection.close()
     return firstEffectiveTaxRate
 
-def getLastEffectiveTaxRate(ticker): #TODO: Handle if last 2019 tax rate is 'nan', then it should be zero
+def getLastEffectiveTaxRate(ticker): 
     databaseName = getDatabaseName()
     sqliteConnection = sqlite3.connect(databaseName)
     cursor = sqliteConnection.cursor()
@@ -661,6 +678,44 @@ def getAnnualIncomeStatementDateRange(ticker):
     cursor.close()
     sqliteConnection.close()
     return numberOfDates
+
+def getAnnualLatestTotalCash(ticker):
+    databaseName = getDatabaseName()
+    sqliteConnection = sqlite3.connect(databaseName)
+    cursor = sqliteConnection.cursor()
+    queryString = f"SELECT rawvalue, max(Date) FROM balanceSheets where lineitemname like 'Total Cash & ST Investments' and companyticker = '{ticker}' and timescale = 'annual';"
+    queryData = cursor.execute(queryString).fetchall()
+
+    totalCash = queryData[0][0]
+    
+    cursor.close()
+    sqliteConnection.close()
+    return totalCash
+
+def getAnnualLatestTotalAssets(ticker):
+    databaseName = getDatabaseName()
+    sqliteConnection = sqlite3.connect(databaseName)
+    cursor = sqliteConnection.cursor()
+    queryString = f"SELECT rawvalue, max(Date) FROM balanceSheets where lineitemname like 'Total Assets' and companyticker = '{ticker}' and timescale = 'annual'; "
+    queryData = cursor.execute(queryString).fetchall()
+
+    totalAssets = queryData[0][0]
+    
+    cursor.close()
+    sqliteConnection.close()
+    return totalAssets
+
+def getAnnualLatestTotalLiabilities(ticker):
+    databaseName = getDatabaseName()
+    sqliteConnection = sqlite3.connect(databaseName)
+    cursor = sqliteConnection.cursor()
+    queryString = f"SELECT rawvalue, max(Date) FROM balanceSheets where lineitemname like 'Total Liabilities' and companyticker = '{ticker}' and timescale = 'annual'; "
+    queryData = cursor.execute(queryString).fetchall()
+    totalLiabilities = queryData[0][0]
+    
+    cursor.close()
+    sqliteConnection.close()
+    return totalLiabilities
 
 #########################################################################
 ######  ### ####### #     # #######  #####   #####     #       #######  #####  ###  #####  
@@ -814,30 +869,49 @@ def calc_futureCoupon(ticker, debugFlag):
             errorMsg += 'Error in Growth Eq\n'
             # print('error in growth eq')
 
+        totalCash = getAnnualLatestTotalCash(ticker)
+        if 'None' in str(totalCash):
+            totalCash = 0
+            # print("found none cash")
+        totalAssets = getAnnualLatestTotalAssets(ticker)
+        totalLiabilities = getAnnualLatestTotalLiabilities(ticker)
+        currentRatio = float(totalAssets)/float(totalLiabilities)
         #TODO: consistency printing out percentages and dollar amounts and displaying in screen output
         if debugFlag == True:
             try:
                 prettyTable = PrettyTable(["Ticker", "Last Close Price", 'Last After Tax EPS', 'Last Tax Rate', 'Last Before-Tax EPS', 'Last DivYield', 'coupon', 'First Before-Tax EPS', 'Growth', 'In 5yrs', 'In 10yrs', 'In 15yrs', 'In 20yrs' ])
                 prettyTable.add_row([f'{ticker}',f'${lastClosePrice}',f'{round(lastAfterTaxBasicEPS,2)}',f'{round(lastEffectiveTaxRate,2)}',f'{round(lastBeforeTaxBasicEPS,2)}', f'{round(lastDivYield,2)}%', f'{round(coupon,2)}%', f'{round(firstBeforeTaxBasicEPS,2)}', f'{round(growth,2)}%', futureCoupon5yr, futureCoupon10yr, futureCoupon15yr, futureCoupon20yr])
                 print(prettyTable)
+                print(f'Dividend Equation: {lastDivYieldEquationString} == (lastDivPerShare/lastClosePrice)*100')
                 print(f'Coupon Equation: {couponEquationString} == (lastBeforeTaxBasicEPS / lastClosePrice)*100) + lastDivYield')
                 print(f'Growth Equation: {growthCalculationString} == ((lastBeforeTaxBasicEPS/firstBeforeTaxBasicEPS)^(1/numberOfPeriods)-1)*100')
-                #print(f'{ticker},,,,,,{round(coupon,2)},{round(growth,2)},{futureCoupon5yr},{futureCoupon10yr},{futureCoupon15yr},{futureCoupon20yr}')
+                print(f'Total Cash: {totalCash}')
+                print(f'Current Ratio: {currentRatio}')
+                print(f'{ticker},,,{round(lastDivYield,2)},{round(coupon,2)},{round(growth,2)},{totalCash},{currentRatio},{futureCoupon5yr},{futureCoupon10yr},{futureCoupon15yr},{futureCoupon20yr}\n')
             except:
                 errorFlag += 1
                 errorMsg += 'Error printing debug info\n'
                 # print("debug output")
-        try:
-            with open('excel/seekingAlphaLog.csv', 'a') as f:
-                f.write(f'{ticker},,,,,,{round(coupon,2)},{round(growth,2)},{futureCoupon5yr},{futureCoupon10yr},{futureCoupon15yr},{futureCoupon20yr}\n')
+        else:
+            print(f'{ticker}:\n    Coupon: {coupon}\n    Growth: {growth}\n    Cash: {totalCash}\n    Current Ratio: {currentRatio}\n')
 
-            print(f'{ticker}:\n  Coupon: {round(coupon,2)}%\t\n  Growth: {round(growth,2)}%\t\n')
+                
+        
+
+        try:
+            # print(f'Printing Excel...')
+            # print(f'''{ticker},,,{divYield},{coupon},{totalCash},{currentRatio}\n''')
+            with open('excel/seekingAlphaLog.csv', 'a') as f: #TODO: update output: symbol,,,DivYield, Coupon, Growth, Cash, Current Ratio
+                f.write(f'''{ticker},,,{lastDivYield},{coupon},{growth},{totalCash},{currentRatio}\n''')
+                # pass
+
+            print(f'{ticker}:\n  Coupon: {round(coupon,2)}%\t\n  Growth: {round(growth,2)}%\t\n    Cash: ${totalCash}\t\n    CR: {currentRatio}\n')
             with open('screenOutputLog.txt', 'a') as f:
-                f.write(f'{ticker}:\n  Coupon: {round(coupon,2)}%\t\n  Growth: {round(growth,2)}%\t\n')
+                f.write(f'{ticker}:\n  Coupon: {round(coupon,2)}%\t\n  Growth: {round(growth,2)}%\t\n   Cash: ${totalCash}\t\n    CR: {currentRatio}\n')
         except:
             errorFlag += 1
             errorMsg += 'Error in logging to file\n'
-            # print('log output')
+            print('log output')
 
     if errorFlag > 0:
         # print(f'**{ticker}**error {errorFlag}')
@@ -979,13 +1053,21 @@ def calculateProjectedROI(ticker):
     sqliteConnection.close()
     return
 
-
+######  #     # #     #    ####### ### #     # ####### 
+#     # #     # ##    #       #     #  ##   ## #       
+#     # #     # # #   #       #     #  # # # # #       
+######  #     # #  #  #       #     #  #  #  # #####   
+#   #   #     # #   # #       #     #  #     # #       
+#    #  #     # #    ##       #     #  #     # #       
+#     #  #####  #     #       #    ### #     # ####### 
 
 def executeTickerList(tickerList, debugBool):
     for ticker in tickerList:
         # print(ticker)
         #getCompanyFinancialData(ticker)
         getIncomeStatementData(ticker)
+        getBalanceSheetData(ticker)
+        getCashFlowData(ticker)
         getPriceActionData(ticker)
         #calculateProjectedROI(ticker)
         #getLastClosePrice(ticker)
@@ -1007,6 +1089,8 @@ def readFromTextFile(fileList, debugBool):
                     print(ticker)
                 else:
                     # print(ticker)
+                    getBalanceSheetData(ticker)
+                    getCashFlowData(ticker)
                     getIncomeStatementData(ticker)
                     getPriceActionData(ticker)
                     calc_futureCoupon(ticker, debugFlag=debugBool)
@@ -1024,6 +1108,8 @@ def readFromTextFile(fileList, debugBool):
                     print(ticker)
                 else:
                     # print(ticker)
+                    getBalanceSheetData(ticker)
+                    getCashFlowData(ticker)
                     getIncomeStatementData(ticker)
                     getPriceActionData(ticker)
                     calc_futureCoupon(ticker, debugFlag=debugBool)
@@ -1082,93 +1168,20 @@ def main():
 #     return
 
 
-#ifNotExistsCreateDB()
-#getCompanyFinancialData('SCHW')
-#getRatings('SCHW')
-# def start():
-#     main(obj={})
 
 #TODO: https://codeburst.io/building-beautiful-command-line-interfaces-with-python-26c7e1bb54df
 if __name__ == '__main__':   
-    #print(len(sys.argv))
-    ifNotExistsCreateDB()
-    # def readFromCommandLine():
-    #     for ticker in sys.argv[1:]:
-    #         # print(ticker)
-    #         #getCompanyFinancialData(ticker)
-    #         getIncomeStatementData(ticker)
-    #         getPriceActionData(ticker)
-    #         #calculateProjectedROI(ticker)
-    #         #getLastClosePrice(ticker)
-    #         calc_futureCoupon(ticker, debugFlag=True)
-
-    #     return
-    
-    # def readFromCSV():
-    #     tickerList_df = pd.read_csv('NYSE.csv', sep=',')
-    #     #print(tickerList_df['Symbol'])
-    #     for ticker in tickerList_df['Symbol']:
-    #         if '$' in ticker or '^' in ticker or '~' in ticker:
-    #             print(ticker)
-    #         else:
-    #             # print(ticker)
-    #             getIncomeStatementData(ticker)
-    #             getPriceActionData(ticker)
-    #             calc_futureCoupon(ticker)
-    #     return
-
-    # def readFromTextFile(debugBool):
-        # if len(sys.argv) == 1:
-        #     for file in ['symbols_nyse.txt', 'symbols_nasdaq.txt', 'symbols_amex.txt']:
-        #         tickerList = []
-        #         tickerStr = ''
-        #         with open(file, 'r') as f:
-        #             for item in f:
-        #                 # print(item.split())
-        #                 tickerList = item.split()
-        #         #print(tickerList)
-        #         for ticker in tickerList:
-        #             if '$' in ticker or '^' in ticker or '~' in ticker:
-        #                 print(ticker)
-        #             else:
-        #                 # print(ticker)
-        #                 getIncomeStatementData(ticker)
-        #                 getPriceActionData(ticker)
-        #                 calc_futureCoupon(ticker, debugFlag=debugBool)
-        # else:
-        #     for file in sys.argv[1:]:
-        #         tickerList = []
-        #         tickerStr = ''
-        #         with open(file, 'r') as f:
-        #             for item in f:
-        #                 # print(item.split())
-        #                 tickerList = item.split()
-        #         #print(tickerList)
-        #         for ticker in tickerList:
-        #             if '$' in ticker or '^' in ticker or '~' in ticker:
-        #                 print(ticker)
-        #             else:
-        #                 # print(ticker)
-        #                 getIncomeStatementData(ticker)
-        #                 getPriceActionData(ticker)
-        #                 calc_futureCoupon(ticker, debugFlag=debugBool)
-
-    
-    # getRealTimePrices('SCHW')
-    #readFromTextFile()
-    #getCompanyFinancialData('SCHW')
-    # calculateProjectedROI('SCHW')
     #log("Profit Hawk", color="red", figlet=True)
-    # deleteDatabase()
-    # rotateLog()
-    # ifNotExistsCreateDB()
+    deleteDatabase()
+    rotateLog()
+    ifNotExistsCreateDB()
     # #readFromCommandLine()
     # #readFromCSV()
     # readFromTextFile(debugBool=True)
     #calculateProjectedROI('AB')
 
     main()
-    print(f'Tickers successfully processed: {totalSuccessCount}')
-    print(f'Tickers exited with error: {totalErrorCount}')
+    # print(f'Tickers successfully processed: {totalSuccessCount}')
+    # print(f'Tickers exited with error: {totalErrorCount}')
             
         
