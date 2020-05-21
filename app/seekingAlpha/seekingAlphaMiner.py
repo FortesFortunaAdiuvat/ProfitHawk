@@ -1,5 +1,5 @@
 import sqlite3, requests, datetime, re, json, argparse, os, sys, six
-#from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup
 import pandas as pd
 import numpy as np
 import time
@@ -73,11 +73,16 @@ def ifNotExistsCreateDB():
     createStudyFutureCouponTable = f'''CREATE TABLE IF NOT EXISTS study_futureCoupon(
         rowid INTEGER PRIMARY KEY, companyTicker TEXT, coupon INTEGER, growth INTEGER, sampleDate datetime
     ); '''
+    createOverviewDataTable = f'''CREATE TABLE IF NOT EXISTS overviewData (
+        rowid INTEGER PRIMARY KEY, companyTicker TEXT, sector TEXT, industry TEXT
+    ); '''
+
     cursor.execute(createBalanceSheetsTable)
     cursor.execute(createCashFlowsTable)
     cursor.execute(createIncomeStatementsTable)
     cursor.execute(createRealTimePricesTable)
     cursor.execute(createStudyFutureCouponTable)
+    cursor.execute(createOverviewDataTable)
 
     sqliteConnection.commit()
     sqliteConnection.close()
@@ -134,9 +139,41 @@ def getCompanyOverviewData(ticker):
     headers = getRequestHeaders(ticker)
     overviewPage = requests.get(url=url, headers=headers)
     print(overviewPage.status_code)
-    # soup = BeautifulSoup(overviewPage.content, 'html.parser')
+    # print(overviewPage.content)
+    soup = BeautifulSoup(overviewPage.content, 'html.parser')
     # print(soup)
+    # with open('overviewPage.html', 'w') as f:
+    #     f.write(str(soup))
+    scriptSections = soup.find('script', text=re.compile("window.SA = "))
+    # print(scriptSections)
+    # data = str(scriptSections)[str(scriptSections).find('window.SA = '):str(scriptSections).find('industryname')]
+    sector = re.search(r'"sectorname":"[A-Za-z ]*"', str(scriptSections)).group()
+    # sector = str(sector)
+    sector = sector.replace('\'','')
+    # sector = {sector}
+    print(sector)
+    sectorName = sector.split(sep=':')[1]
+    print(sectorName)
+    industry = re.search(r'"industryname":"[A-Za-z ]*"', str(scriptSections)).group()
+    industry = industry.replace('\'', '')
+    industryName = industry.split(sep=':')[1]
+    # industry = str(industry)
+    print(industryName)
     
+    headers = getRequestHeaders(ticker)
+    databaseName = getDatabaseName()
+    sqliteConnection = sqlite3.connect(databaseName)
+    cursor = sqliteConnection.cursor()
+    overviewData_insertQuery = f'INSERT INTO overviewData (companyTicker, sector, industry) VALUES ("{ticker}", {sectorName}, {industryName});'
+    cursor.execute(overviewData_insertQuery)
+    sqliteConnection.commit()
+    cursor.close()
+    sqliteConnection.close()
+
+
+        # dataSection = sec.find('A')
+    # for sec in scriptSections:
+    #     print(dataSection)
     return overviewPage.status_code
 
 ########################################################################
@@ -687,6 +724,10 @@ def getAnnualLatestTotalCash(ticker):
     queryData = cursor.execute(queryString).fetchall()
 
     totalCash = queryData[0][0]
+    if 'None' in str(totalCash):
+        queryString2 = f'SELECT rawvalue, max(Date) FROM balanceSheets where lineitemname like "Cash And Equivalents" and companyticker = "{ticker}" and timescale = "annual"; '
+        queryData2 = cursor.execute(queryString2).fetchall()
+        totalCash = queryData2[0][0]
     
     cursor.close()
     sqliteConnection.close()
@@ -879,6 +920,7 @@ def calc_futureCoupon(ticker, debugFlag):
         #TODO: consistency printing out percentages and dollar amounts and displaying in screen output
         if debugFlag == True:
             try:
+                print(f'{ticker}:\n    Coupon: {coupon}%\n    Growth: {growth}%\n    Cash: ${totalCash}\n    Current Ratio: {currentRatio}%\n')
                 prettyTable = PrettyTable(["Ticker", "Last Close Price", 'Last After Tax EPS', 'Last Tax Rate', 'Last Before-Tax EPS', 'Last DivYield', 'coupon', 'First Before-Tax EPS', 'Growth', 'In 5yrs', 'In 10yrs', 'In 15yrs', 'In 20yrs' ])
                 prettyTable.add_row([f'{ticker}',f'${lastClosePrice}',f'{round(lastAfterTaxBasicEPS,2)}',f'{round(lastEffectiveTaxRate,2)}',f'{round(lastBeforeTaxBasicEPS,2)}', f'{round(lastDivYield,2)}%', f'{round(coupon,2)}%', f'{round(firstBeforeTaxBasicEPS,2)}', f'{round(growth,2)}%', futureCoupon5yr, futureCoupon10yr, futureCoupon15yr, futureCoupon20yr])
                 print(prettyTable)
@@ -893,7 +935,7 @@ def calc_futureCoupon(ticker, debugFlag):
                 errorMsg += 'Error printing debug info\n'
                 # print("debug output")
         else:
-            print(f'{ticker}:\n    Coupon: {coupon}\n    Growth: {growth}\n    Cash: {totalCash}\n    Current Ratio: {currentRatio}\n')
+            print(f'{ticker}:\n    Coupon: {coupon}%\n    Growth: {growth}%\n    Cash: ${totalCash}\n    Current Ratio: {currentRatio}%\n')
 
                 
         
@@ -905,7 +947,7 @@ def calc_futureCoupon(ticker, debugFlag):
                 f.write(f'''{ticker},,,{lastDivYield},{coupon},{growth},{totalCash},{currentRatio}\n''')
                 # pass
 
-            print(f'{ticker}:\n  Coupon: {round(coupon,2)}%\t\n  Growth: {round(growth,2)}%\t\n    Cash: ${totalCash}\t\n    CR: {currentRatio}\n')
+            # print(f'{ticker}:\n  Coupon: {round(coupon,2)}%\t\n  Growth: {round(growth,2)}%\t\n    Cash: ${totalCash}\t\n    CR: {currentRatio}\n')
             with open('screenOutputLog.txt', 'a') as f:
                 f.write(f'{ticker}:\n  Coupon: {round(coupon,2)}%\t\n  Growth: {round(growth,2)}%\t\n   Cash: ${totalCash}\t\n    CR: {currentRatio}\n')
         except:
@@ -1065,12 +1107,17 @@ def executeTickerList(tickerList, debugBool):
     for ticker in tickerList:
         # print(ticker)
         #getCompanyFinancialData(ticker)
+        
         getIncomeStatementData(ticker)
         getBalanceSheetData(ticker)
         getCashFlowData(ticker)
         getPriceActionData(ticker)
+
+        getCompanyOverviewData(ticker)
+
         #calculateProjectedROI(ticker)
         #getLastClosePrice(ticker)
+        
         calc_futureCoupon(ticker, debugFlag=debugBool)
     return
 
