@@ -138,7 +138,7 @@ def getCompanyOverviewData(ticker):
     url = f'https://seekingalpha.com/symbol/{ticker}/overview'
     headers = getRequestHeaders(ticker)
     overviewPage = requests.get(url=url, headers=headers)
-    print(overviewPage.status_code)
+    # print(overviewPage.status_code)
     # print(overviewPage.content)
     soup = BeautifulSoup(overviewPage.content, 'html.parser')
     # print(soup)
@@ -147,18 +147,29 @@ def getCompanyOverviewData(ticker):
     scriptSections = soup.find('script', text=re.compile("window.SA = "))
     # print(scriptSections)
     # data = str(scriptSections)[str(scriptSections).find('window.SA = '):str(scriptSections).find('industryname')]
-    sector = re.search(r'"sectorname":"[A-Za-z ]*"', str(scriptSections)).group()
+    try:
+        sector = re.search(r'"sectorname":"[A-Za-z ]*"', str(scriptSections)).group()
+        sector = sector.replace('\'','')
+        sectorName = sector.split(sep=':')[1]
+
+    except:
+        sector = '"Not Found"'
+        sectorName = '"Not Found"'
     # sector = str(sector)
-    sector = sector.replace('\'','')
+    
     # sector = {sector}
-    print(sector)
-    sectorName = sector.split(sep=':')[1]
-    print(sectorName)
-    industry = re.search(r'"industryname":"[A-Za-z ]*"', str(scriptSections)).group()
-    industry = industry.replace('\'', '')
-    industryName = industry.split(sep=':')[1]
+    # print(sector)
+    # print(sectorName)
+    try:
+        industry = re.search(r'"industryname":"[A-Za-z ]*"', str(scriptSections)).group()
+        industry = industry.replace('\'', '')
+        industryName = industry.split(sep=':')[1]
+    except:
+        industry = '"Not Found"'
+        industryName = '"Not Found"'
+    
     # industry = str(industry)
-    print(industryName)
+    # print(industryName)
     
     headers = getRequestHeaders(ticker)
     databaseName = getDatabaseName()
@@ -916,7 +927,11 @@ def calc_futureCoupon(ticker, debugFlag):
             # print("found none cash")
         totalAssets = getAnnualLatestTotalAssets(ticker)
         totalLiabilities = getAnnualLatestTotalLiabilities(ticker)
-        currentRatio = float(totalAssets)/float(totalLiabilities)
+
+        if 'None' in str(totalAssets) or 'None' in str(totalLiabilities):
+            currentRatio = 0
+        else:
+           currentRatio = float(totalAssets)/float(totalLiabilities)
         #TODO: consistency printing out percentages and dollar amounts and displaying in screen output
         if debugFlag == True:
             try:
@@ -1159,6 +1174,8 @@ def readFromTextFile(fileList, debugBool):
                     getCashFlowData(ticker)
                     getIncomeStatementData(ticker)
                     getPriceActionData(ticker)
+                    getCompanyOverviewData(ticker)
+
                     calc_futureCoupon(ticker, debugFlag=debugBool)
 
 def readFromCSV():
