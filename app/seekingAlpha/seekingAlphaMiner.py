@@ -76,7 +76,8 @@ def ifNotExistsCreateDB():
     createOverviewDataTable = f'''CREATE TABLE IF NOT EXISTS overviewData (
         rowid INTEGER PRIMARY KEY, companyTicker TEXT, sector TEXT, industry TEXT
     ); '''
-
+    createOptionsDataTable = f'''CREATE TABLE IF NOT EXISTS optionsData (rowid INTEGER PRIMARY KEY, companyTicker TEXT ); '''
+    
     cursor.execute(createBalanceSheetsTable)
     cursor.execute(createCashFlowsTable)
     cursor.execute(createIncomeStatementsTable)
@@ -112,8 +113,13 @@ def getRequestHeaders(ticker):
     return headers
 
 def getDatabaseName():
-    databaseName = f'seekingAlpha_{datetime.datetime.now().strftime("%Y%m%d")}.db'
+    #databaseName = f'seekingAlpha_{datetime.datetime.now().strftime("%Y%m%d")}.db'
+    databaseName = f'seekingAlpha.db'
     return databaseName
+
+def setDatabaseName():
+    databaseName = f'seekingAlpha_{datetime.datetime.now().strftime("%Y%m%d")}.db'
+    return
 
 def log(string, color, font="slant", figlet=False):
     if colored:
@@ -222,10 +228,16 @@ def getBalanceSheetData(ticker):
                         lineItemDesc = cell['name']
                         lineItemSectionGroup = cell['sectionGroup']
                     if cell['class'].startswith('value'):
-                        if 'Last Report' in cell['name'] or 'TTM' in cell['name']:
-                            date = datetime.datetime.now()
-                        else:
-                            date = datetime.datetime.strptime(cell['name'], '%b %Y').strftime('%b %Y') # captures date in 'Dec 2019' format
+                        if cell['class'].startswith('value'):
+                            if 'TTM' in cell['name']:
+                                timeScale = 'annual_TTM'
+                                date = datetime.datetime.now()
+                            elif 'Last Report' in cell['name']:
+                                timeScale = 'annual_lastReport'
+                                date = datetime.datetime.now()
+                            else:
+                                timeScale = 'annual'
+                                date = datetime.datetime.strptime(cell['name'], '%b %Y')
                         if 'raw_value' in cell.keys():
                             if '(' in cell['raw_value']:
                                 rawValue = round(format(-float(cell['raw_value'].strip('()').strip("'").replace(',','')), 'f'), 2)
@@ -260,7 +272,7 @@ def getBalanceSheetData(ticker):
                         else:
                             percentageOfGroup = np.nan
                         #print(f''' INSERT INTO balanceSheets (companyTicker, date, lineItemName, lineItemDesc, lineItemSectionGroup, rawValue, yearOverYearGrowthValue, percentageOfGroup) VALUES ('{ticker}', '{date}', '{lineItemName}', '{lineItemDesc}', '{lineItemSectionGroup}', '{rawValue}', '{yoyValue}', '{percentageOfGroup}');''')
-                        insertRecord_SQL = f''' INSERT INTO balanceSheets (companyTicker, timeScale, date, lineItemName, lineItemDesc, lineItemSectionGroup, rawValue, yearOverYearGrowthValue, percentageOfGroup) VALUES ('{ticker}','annual', '{date}', '{lineItemName}', "{lineItemDesc}", '{lineItemSectionGroup}', '{rawValue}', '{yoyValue}', '{percentageOfGroup}');'''
+                        insertRecord_SQL = f''' INSERT INTO balanceSheets (companyTicker, timeScale, date, lineItemName, lineItemDesc, lineItemSectionGroup, rawValue, yearOverYearGrowthValue, percentageOfGroup) VALUES ('{ticker}','{timeScale}', '{date}', '{lineItemName}', "{lineItemDesc}", '{lineItemSectionGroup}', '{rawValue}', '{yoyValue}', '{percentageOfGroup}');'''
                         cursor.execute(insertRecord_SQL)
                         sqliteConnection.commit()
 
@@ -283,10 +295,16 @@ def getBalanceSheetData(ticker):
                         lineItemDesc = cell['name']
                         lineItemSectionGroup = cell['sectionGroup']
                     if cell['class'].startswith('value'):
-                        if 'Last Report' in cell['name'] or 'TTM' in cell['name']:
-                            date = datetime.datetime.now()
-                        else:
-                            date = datetime.datetime.strptime(cell['name'], '%b %Y').strftime('%b %Y')
+                        if cell['class'].startswith('value'):
+                            if 'TTM' in cell['name']:
+                                timeScale = 'quarterly_TTM'
+                                date = datetime.datetime.now()
+                            elif 'Last Report' in cell['name']:
+                                timeScale = 'quarterly_lastReport'
+                                date = datetime.datetime.now()
+                            else:
+                                timeScale = 'quarterly'
+                                date = datetime.datetime.strptime(cell['name'], '%b %Y')
                         if 'raw_value' in cell.keys():
                             if '(' in cell['raw_value']:
                                 rawValue = round(-float(cell['raw_value'].strip('()').replace(',','')),2)
@@ -320,7 +338,7 @@ def getBalanceSheetData(ticker):
                         else:
                             percentageOfGroup = np.nan
                         #print(f''' INSERT INTO balanceSheets (companyTicker, date, lineItemName, lineItemDesc, lineItemSectionGroup, rawValue, yearOverYearGrowthValue, percentageOfGroup) VALUES ('{ticker}', '{date}', '{lineItemName}', '{lineItemDesc}', '{lineItemSectionGroup}', '{rawValue}', '{yoyValue}', '{percentageOfGroup}');''')
-                        insertRecord_SQL = f''' INSERT INTO balanceSheets (companyTicker, timeScale, date, lineItemName, lineItemDesc, lineItemSectionGroup, rawValue, yearOverYearGrowthValue, percentageOfGroup) VALUES ('{ticker}','quarterly', '{date}', '{lineItemName}', "{lineItemDesc}", '{lineItemSectionGroup}', '{rawValue}', '{yoyValue}', '{percentageOfGroup}');'''
+                        insertRecord_SQL = f''' INSERT INTO balanceSheets (companyTicker, timeScale, date, lineItemName, lineItemDesc, lineItemSectionGroup, rawValue, yearOverYearGrowthValue, percentageOfGroup) VALUES ('{ticker}','{timeScale}', '{date}', '{lineItemName}', "{lineItemDesc}", '{lineItemSectionGroup}', '{rawValue}', '{yoyValue}', '{percentageOfGroup}');'''
                         cursor.execute(insertRecord_SQL)
                         sqliteConnection.commit()
     
@@ -354,10 +372,16 @@ def getCashFlowData(ticker):
                         lineItemDesc = cell['name']
                         lineItemSectionGroup = cell['sectionGroup']
                     if cell['class'].startswith('value'):
-                        if 'Last Report' in cell['name'] or 'TTM' in cell['name']:
-                            date = datetime.datetime.now()
-                        else:
-                            date = datetime.datetime.strptime(cell['name'], '%b %Y').strftime('%b %Y')
+                        if cell['class'].startswith('value'):
+                            if 'TTM' in cell['name']:
+                                timeScale = 'annual_TTM'
+                                date = datetime.datetime.now()
+                            elif 'Last Report' in cell['name']:
+                                timeScale = 'annual_lastReport'
+                                date = datetime.datetime.now()
+                            else:
+                                timeScale = 'annual'
+                                date = datetime.datetime.strptime(cell['name'], '%b %Y')
                         if 'raw_value' in cell.keys():
                             if '(' in cell['raw_value']:
                                 rawValue = round(-float(cell['raw_value'].strip('()').replace(',','')),2)
@@ -374,7 +398,7 @@ def getCashFlowData(ticker):
                                 yoyValue = float(cell['yoy_value'].strip('%').replace(',',''))
                         else:
                             yoyValue = np.nan
-                        insertRecord_SQL = f''' INSERT INTO cashFlows (companyTicker, timeScale, date, lineItemName, lineItemDesc, lineItemSectionGroup, rawValue, yearOverYearGrowthValue) VALUES ('{ticker}','annual', '{date}', '{lineItemName}', "{lineItemDesc}", '{lineItemSectionGroup}', '{rawValue}', '{yoyValue}');'''
+                        insertRecord_SQL = f''' INSERT INTO cashFlows (companyTicker, timeScale, date, lineItemName, lineItemDesc, lineItemSectionGroup, rawValue, yearOverYearGrowthValue) VALUES ('{ticker}','{timeScale}', '{date}', '{lineItemName}', "{lineItemDesc}", '{lineItemSectionGroup}', '{rawValue}', '{yoyValue}');'''
                         cursor.execute(insertRecord_SQL)
                         sqliteConnection.commit()
     #time.sleep(5)
@@ -396,10 +420,16 @@ def getCashFlowData(ticker):
                         lineItemDesc = cell['name']
                         lineItemSectionGroup = cell['sectionGroup']
                     if cell['class'].startswith('value'):
-                        if 'Last Report' in cell['name'] or 'TTM' in cell['name']:
-                            date = datetime.datetime.now()
-                        else:
-                            date = datetime.datetime.strptime(cell['name'], '%b %Y').strftime('%b %Y')
+                        if cell['class'].startswith('value'):
+                            if 'TTM' in cell['name']:
+                                timeScale = 'quarterly_TTM'
+                                date = datetime.datetime.now()
+                            elif 'Last Report' in cell['name']:
+                                timeScale = 'quarterly_lastReport'
+                                date = datetime.datetime.now()
+                            else:
+                                timeScale = 'quarterly'
+                                date = datetime.datetime.strptime(cell['name'], '%b %Y')
                         if 'raw_value' in cell.keys():
                             if '(' in cell['raw_value']:
                                 rawValue = round(-float(cell['raw_value'].strip('()').replace(',','')),2)
@@ -417,7 +447,7 @@ def getCashFlowData(ticker):
                         else:
                             yoyValue = np.NaN
                         #print(f''' INSERT INTO balanceSheets (companyTicker, date, lineItemName, lineItemDesc, lineItemSectionGroup, rawValue, yearOverYearGrowthValue, percentageOfGroup) VALUES ('{ticker}', '{date}', '{lineItemName}', '{lineItemDesc}', '{lineItemSectionGroup}', '{rawValue}', '{yoyValue}', '{percentageOfGroup}');''')
-                        insertRecord_SQL = f''' INSERT INTO cashFlows (companyTicker, timeScale, date, lineItemName, lineItemDesc, lineItemSectionGroup, rawValue, yearOverYearGrowthValue) VALUES ('{ticker}','quarterly', '{date}', '{lineItemName}', "{lineItemDesc}", '{lineItemSectionGroup}', '{rawValue}', '{yoyValue}');'''
+                        insertRecord_SQL = f''' INSERT INTO cashFlows (companyTicker, timeScale, date, lineItemName, lineItemDesc, lineItemSectionGroup, rawValue, yearOverYearGrowthValue) VALUES ('{ticker}','{timeScale}', '{date}', '{lineItemName}', "{lineItemDesc}", '{lineItemSectionGroup}', '{rawValue}', '{yoyValue}');'''
                         cursor.execute(insertRecord_SQL)
                         sqliteConnection.commit()
 
@@ -613,6 +643,32 @@ def getPriceActionData(ticker):
 
     cursor.close()
     sqliteConnection.close()
+    return
+
+def getXigniteOptionsToken():
+    url = f'https://seekingalpha.com/market_data/xignite_token'
+    xigniteTokenData = requests.get(url)
+    xigniteTokenInfo = json.loads(xigniteTokenData.content.decode('utf-8'))
+    token = xigniteTokenInfo['_token']
+    userid = xigniteTokenInfo['_token_userid']
+    return token, userid
+
+def getOptionsData(ticker):
+    # headers = getRequestHeaders(ticker)
+    # databaseName = getDatabaseName()
+    # sqliteConnection = sqlite3.connect(databaseName)
+    # cursor = sqliteConnection.cursor()
+    token, userid = getXigniteOptionsToken()
+    month=12; year=2020; 
+    getEquityOptionsDataURL = f'''https://globaloptions.xignite.com/xglobaloptions.json/GetEquityOptionChain?IdentifierType=Symbol&Identifier={ticker}&Month={month}&Year={year}&SymbologyType=&OptionExchange=&_callback=SA.Utils.SymbolData.clb15901181749410&_token={token}&_token_userid={userid}&_=1590118174801 '''
+    equityOptionsChainData = requests.get(url=getEquityOptionsDataURL)
+    # print(equityOptionsChainData.content)
+    # print(equityOptionsChainData.status_code)
+    optionsInfoString = equityOptionsChainData.content.decode('utf-8')
+    optionsInfo = re.search(r'\(.*\)', str(optionsInfoString)).group()
+    print(optionsInfo)
+    # cursor.close()
+    # sqliteConnection.close()
     return
 
 
@@ -935,7 +991,7 @@ def calc_futureCoupon(ticker, debugFlag):
         #TODO: consistency printing out percentages and dollar amounts and displaying in screen output
         if debugFlag == True:
             try:
-                print(f'{ticker}:\n    Coupon: {coupon}%\n    Growth: {growth}%\n    Cash: ${totalCash}\n    Current Ratio: {currentRatio}%\n')
+                print(f'    Coupon: {coupon}%\n    Growth: {growth}%\n    Cash: ${totalCash}\n    Current Ratio: {currentRatio}%\n')
                 prettyTable = PrettyTable(["Ticker", "Last Close Price", 'Last After Tax EPS', 'Last Tax Rate', 'Last Before-Tax EPS', 'Last DivYield', 'coupon', 'First Before-Tax EPS', 'Growth', 'In 5yrs', 'In 10yrs', 'In 15yrs', 'In 20yrs' ])
                 prettyTable.add_row([f'{ticker}',f'${lastClosePrice}',f'{round(lastAfterTaxBasicEPS,2)}',f'{round(lastEffectiveTaxRate,2)}',f'{round(lastBeforeTaxBasicEPS,2)}', f'{round(lastDivYield,2)}%', f'{round(coupon,2)}%', f'{round(firstBeforeTaxBasicEPS,2)}', f'{round(growth,2)}%', futureCoupon5yr, futureCoupon10yr, futureCoupon15yr, futureCoupon20yr])
                 print(prettyTable)
@@ -1157,9 +1213,11 @@ def readFromTextFile(fileList, debugBool):
                     getPriceActionData(ticker)
                     calc_futureCoupon(ticker, debugFlag=debugBool)
     else:
+        fileCounter = 1
         for file in fileList:
             tickerList = []
             tickerStr = ''
+            counter = 1
             with open(file, 'r') as f:
                 for item in f:
                     # print(item.split())
@@ -1169,7 +1227,7 @@ def readFromTextFile(fileList, debugBool):
                 if '$' in ticker or '^' in ticker or '~' in ticker:
                     print(ticker)
                 else:
-                    # print(ticker)
+                    print(f'{ticker}\t\t\tFile: {fileCounter} [{counter}/{len(tickerList)}]')
                     getBalanceSheetData(ticker)
                     getCashFlowData(ticker)
                     getIncomeStatementData(ticker)
@@ -1177,6 +1235,9 @@ def readFromTextFile(fileList, debugBool):
                     getCompanyOverviewData(ticker)
 
                     calc_futureCoupon(ticker, debugFlag=debugBool)
+                    counter += 1
+            
+            fileCounter += 1
 
 def readFromCSV():
     tickerList_df = pd.read_csv('NYSE.csv', sep=',')
@@ -1236,7 +1297,8 @@ def main():
 #TODO: https://codeburst.io/building-beautiful-command-line-interfaces-with-python-26c7e1bb54df
 if __name__ == '__main__':   
     #log("Profit Hawk", color="red", figlet=True)
-    deleteDatabase()
+    #deleteDatabase()
+
     rotateLog()
     ifNotExistsCreateDB()
     # #readFromCommandLine()
