@@ -76,14 +76,16 @@ def ifNotExistsCreateDB():
     createOverviewDataTable = f'''CREATE TABLE IF NOT EXISTS overviewData (
         rowid INTEGER PRIMARY KEY, companyTicker TEXT, sector TEXT, industry TEXT
     ); '''
-    createOptionsDataTable = f'''CREATE TABLE IF NOT EXISTS optionsData (rowid INTEGER PRIMARY KEY, companyTicker TEXT ); '''
-    
+    createOptionsDataTable = f'''CREATE TABLE IF NOT EXISTS optionsData (
+        rowid INTEGER PRIMARY KEY, companyTicker TEXT, optionType TEXT, strikePrice INTEGER, inTheMoney TEXT, expirationDate datetime, askPrice INTEGER, askSize INTEGER, askTime datetime, askDate datetime, bidPrice INTEGER, bidSize INTEGER, bidTime datetime, bidDate datetime, contractExchange TEXT, openInterset TEXT, openInterestDate datetime, openPrice INTEGER, high INTEGER, low INTEGER, close INTEGER, last INTEGER, lastPrice INTEGER, previousClose INTEGER, change INTEGER, percentChange INTEGER, volume INTEGER, delay INTEGER, time datetime, date datetime, year datetime, month datetime); '''
+    createTickersTable = f'''CREATE TABLE IF NOT EXISTS tickers (rowid INTEGER PRIMARY KEY, ticker TEXT) '''
     cursor.execute(createBalanceSheetsTable)
     cursor.execute(createCashFlowsTable)
     cursor.execute(createIncomeStatementsTable)
     cursor.execute(createRealTimePricesTable)
     cursor.execute(createStudyFutureCouponTable)
     cursor.execute(createOverviewDataTable)
+    cursor.execute(createOptionsDataTable)
 
     sqliteConnection.commit()
     sqliteConnection.close()
@@ -659,16 +661,107 @@ def getOptionsData(ticker):
     # sqliteConnection = sqlite3.connect(databaseName)
     # cursor = sqliteConnection.cursor()
     token, userid = getXigniteOptionsToken()
-    month=12; year=2020; 
+    month=12; year=2020
     getEquityOptionsDataURL = f'''https://globaloptions.xignite.com/xglobaloptions.json/GetEquityOptionChain?IdentifierType=Symbol&Identifier={ticker}&Month={month}&Year={year}&SymbologyType=&OptionExchange=&_callback=SA.Utils.SymbolData.clb15901181749410&_token={token}&_token_userid={userid}&_=1590118174801 '''
     equityOptionsChainData = requests.get(url=getEquityOptionsDataURL)
     # print(equityOptionsChainData.content)
     # print(equityOptionsChainData.status_code)
     optionsInfoString = equityOptionsChainData.content.decode('utf-8')
-    optionsInfo = re.search(r'\(.*\)', str(optionsInfoString)).group()
-    print(optionsInfo)
-    # cursor.close()
-    # sqliteConnection.close()
+    optionsInfo = re.search(r'\{.*\}', str(optionsInfoString)).group()
+    optionsInfo = json.loads(optionsInfo)
+    # print(optionsInfo['Quote'])
+    if optionsInfo['Quote'] is None:
+        print(f'{ticker} options data not found')
+    elif optionsInfo['Quote']['Outcome'] == 'Success':
+        databaseName = getDatabaseName()
+        sqliteConnection = sqlite3.connect(databaseName)
+        cursor = sqliteConnection.cursor()
+        # print(optionsInfo['Expirations'][0]['Calls'])
+        try:
+            for contract in optionsInfo['Expirations'][0]['Calls']:
+                strikePrice = contract['StrikePrice']
+                inTheMoney = contract['InTheMoney']
+                expirationDate = contract['ExpirationDate']
+                askPrice = contract['Ask']
+                askSize = contract['AskSize']
+                askTime = contract['AskTime'] #format H:M:S PM
+                askDate = contract['AskDate'] #format M/D/YYYY
+                bidPrice = contract['Bid']
+                bidSize = contract['BidSize']
+                bidTime = contract['BidTime']
+                bidDate = contract['BidDate']
+                contractExchange = contract['Exchange']
+                openInterset = contract['OpenInterest']
+                openInterestDate = contract['OpenInterestDate']
+                openPrice = contract['Open']
+                high = contract['High']
+                low = contract['Low']
+                close = contract['Close']
+                last = contract['Last']
+                lastPrice = contract['LastSize']
+                previousClose = contract['PreviousClose']
+                change = contract['Change']
+                percentChange = contract['PercentChange']
+                volume = contract['Volume']
+                delay = contract['Delay']
+                time = contract['Time']
+                date = contract['Date']
+                year = contract['Year']
+                month = contract['Month']
+
+                callOptionContractInsertQuery = f'''INSERT INTO optionsData (companyTicker, optionType, strikePrice, inTheMoney, expirationDate, askPrice, askSize, askTime, askDate, bidPrice, bidSize, bidTime, bidDate, contractExchange, openInterset, openInterestDate, openPrice, high, low, close, last, lastPrice, previousClose, change, percentChange, volume, delay, time, date, year, month) VALUES ('{ticker}','call', {strikePrice}, '{inTheMoney}', '{expirationDate}', '{askPrice}', '{askSize}', '{askTime}', '{askDate}', '{bidPrice}', '{bidSize}', '{bidTime}', '{bidDate}', '{contractExchange}', '{openInterset}', '{openInterestDate}', {openPrice}, {high}, {low}, {close}, {last}, {lastPrice}, {previousClose}, {change}, {percentChange}, {volume}, {delay}, '{time}', '{date}', '{year}', '{month}'); '''
+                print(callOptionContractInsertQuery)
+                cursor.execute(callOptionContractInsertQuery)
+                sqliteConnection.commit()
+        except:
+            print(optionsInfo)
+            print(f'Unanticipated data response')
+
+        try:
+            for contract in optionsInfo['Expirations'][0]['Puts']:
+                strikePrice = contract['StrikePrice']
+                inTheMoney = contract['InTheMoney']
+                expirationDate = contract['ExpirationDate']
+                askPrice = contract['Ask']
+                askSize = contract['AskSize']
+                askTime = contract['AskTime'] #format H:M:S PM
+                askDate = contract['AskDate'] #format M/D/YYYY
+                bidPrice = contract['Bid']
+                bidSize = contract['BidSize']
+                bidTime = contract['BidTime']
+                bidDate = contract['BidDate']
+                contractExchange = contract['Exchange']
+                openInterset = contract['OpenInterest']
+                openInterestDate = contract['OpenInterestDate']
+                openPrice = contract['Open']
+                high = contract['High']
+                low = contract['Low']
+                close = contract['Close']
+                last = contract['Last']
+                lastPrice = contract['LastSize']
+                previousClose = contract['PreviousClose']
+                change = contract['Change']
+                percentChange = contract['PercentChange']
+                volume = contract['Volume']
+                delay = contract['Delay']
+                time = contract['Time']
+                date = contract['Date']
+                year = contract['Year']
+                month = contract['Month']
+
+                putOptionContractInsertQuery = f'''INSERT INTO optionsData (companyTicker, optionType, strikePrice, inTheMoney, expirationDate, askPrice, askSize, askTime, askDate, bidPrice, bidSize, bidTime, bidDate, contractExchange, openInterset, openInterestDate, openPrice, high, low, close, last, lastPrice, previousClose, change, percentChange, volume, delay, time, date, year, month) VALUES ('{ticker}','put', {strikePrice}, '{inTheMoney}', '{expirationDate}', '{askPrice}', '{askSize}', '{askTime}', '{askDate}', '{bidPrice}', '{bidSize}', '{bidTime}', '{bidDate}', '{contractExchange}', '{openInterset}', '{openInterestDate}', {openPrice}, {high}, {low}, {close}, {last}, {lastPrice}, {previousClose}, {change}, {percentChange}, {volume}, {delay}, '{time}', '{date}', '{year}', '{month}'); '''
+                print(putOptionContractInsertQuery)
+                cursor.execute(putOptionContractInsertQuery)
+                sqliteConnection.commit()
+        except:
+            print(optionsInfo)
+            print(f'Unanticipated data response')
+        
+        
+        cursor.close()
+        sqliteConnection.close()
+    else:
+        print(f'{ticker} options data not found')
     return
 
 
@@ -1176,20 +1269,14 @@ def calculateProjectedROI(ticker):
 
 def executeTickerList(tickerList, debugBool):
     for ticker in tickerList:
-        # print(ticker)
-        #getCompanyFinancialData(ticker)
-        
         getIncomeStatementData(ticker)
         getBalanceSheetData(ticker)
         getCashFlowData(ticker)
         getPriceActionData(ticker)
-
         getCompanyOverviewData(ticker)
-
-        #calculateProjectedROI(ticker)
-        #getLastClosePrice(ticker)
-        
+        getOptionsData(ticker)
         calc_futureCoupon(ticker, debugFlag=debugBool)
+
     return
 
 def readFromTextFile(fileList, debugBool):
@@ -1228,13 +1315,14 @@ def readFromTextFile(fileList, debugBool):
                     print(ticker)
                 else:
                     print(f'{ticker}\t\t\tFile: {fileCounter} [{counter}/{len(tickerList)}]')
-                    getBalanceSheetData(ticker)
-                    getCashFlowData(ticker)
-                    getIncomeStatementData(ticker)
-                    getPriceActionData(ticker)
-                    getCompanyOverviewData(ticker)
+                    # getBalanceSheetData(ticker)
+                    # getCashFlowData(ticker)
+                    # getIncomeStatementData(ticker)
+                    # getPriceActionData(ticker)
+                    # getCompanyOverviewData(ticker)
+                    getOptionsData(ticker)
 
-                    calc_futureCoupon(ticker, debugFlag=debugBool)
+                    # calc_futureCoupon(ticker, debugFlag=debugBool)
                     counter += 1
             
             fileCounter += 1
@@ -1251,6 +1339,8 @@ def readFromCSV():
             getPriceActionData(ticker)
             calc_futureCoupon(ticker)
     return
+
+
 
 
 # @click.group()
