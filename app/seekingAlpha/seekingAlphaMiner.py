@@ -1,6 +1,7 @@
-import sqlite3, requests, datetime, re, json, argparse, os, sys, six
+import sqlite3, requests, datetime, re, json, argparse, os, sys, six#, pygsheets
 from bs4 import BeautifulSoup
 import pandas as pd
+from pandas.tseries.offsets import BDay # A utility for handling business days: https://stackoverflow.com/questions/2224742/most-recent-previous-business-day-in-python
 import numpy as np
 import time
 from prettytable import PrettyTable
@@ -8,8 +9,7 @@ import pyfiglet
 from pyfiglet import figlet_format
 from PyInquirer import (Token, ValidationError, Validator, print_json, prompt, style_from_dict)
 #from pyconfigstore import ConfigStore
-totalSuccessCount = 0
-totalErrorCount = 0
+
 try:
     import colorama
     colorama.init()
@@ -51,6 +51,8 @@ def rotateLog():
         os.rename('excel/seekingAlphaLog.csv', f'excel/seekingAlphaLog_{datetime.datetime.now()}.csv')
     if os.path.exists('err/errorLog.txt'):
         os.rename('err/errorLog.txt', f'err/errorLog_{datetime.datetime.now()}.txt')
+    if os.path.exists('seekingAlpha.db'):
+        os.rename('seekingAlpha.db',f'seekingAlpha_{datetime.datetime.now()}.db')
     return
 
 def ifNotExistsCreateDB():
@@ -71,7 +73,7 @@ def ifNotExistsCreateDB():
         rowid INTEGER PRIMARY KEY, companyTicker TEXT, date datetime, open INTEGER, high INTEGER, low INTEGER, close INTEGER, previousClose INTEGER, low52Week INTEGER, high52Week INTEGER
     ); '''
     createStudyFutureCouponTable = f'''CREATE TABLE IF NOT EXISTS study_futureCoupon(
-        rowid INTEGER PRIMARY KEY, companyTicker TEXT, coupon INTEGER, growth INTEGER, sampleDate datetime
+        rowid INTEGER PRIMARY KEY, companyTicker TEXT,  coupon INTEGER, growth INTEGER, sampleDate datetime
     ); '''
     createOverviewDataTable = f'''CREATE TABLE IF NOT EXISTS overviewData (
         rowid INTEGER PRIMARY KEY, companyTicker TEXT, sector TEXT, industry TEXT
@@ -114,9 +116,10 @@ def getRequestHeaders(ticker):
 
     return headers
 
+
 def getDatabaseName():
-    #databaseName = f'seekingAlpha_{datetime.datetime.now().strftime("%Y%m%d")}.db'
-    databaseName = f'seekingAlpha.db'
+    # databaseName = f'seekingAlpha_{datetime.datetime.now().strftime("%Y%m%d")}.db'
+    databaseName = 'seekingAlpha.db'
     return databaseName
 
 def setDatabaseName():
@@ -184,7 +187,10 @@ def getCompanyOverviewData(ticker):
     sqliteConnection = sqlite3.connect(databaseName)
     cursor = sqliteConnection.cursor()
     overviewData_insertQuery = f'INSERT INTO overviewData (companyTicker, sector, industry) VALUES ("{ticker}", {sectorName}, {industryName});'
-    cursor.execute(overviewData_insertQuery)
+    try:
+        cursor.execute(overviewData_insertQuery)
+    except:
+        print(f'overviewData table unknown error')
     sqliteConnection.commit()
     cursor.close()
     sqliteConnection.close()
@@ -260,17 +266,23 @@ def getBalanceSheetData(ticker):
                         if 'asset_percent' in cell.keys():
                             if '(' in cell['asset_percent']:
                                 percentageOfGroup = -float(cell['asset_percent'].strip('()').strip('%').replace(',',''))
-                            elif '-' in cell['asset_percent'] or '' in cell['asset_percent']:
+                            elif '-' in cell['asset_percent'] or 'NM' in cell['asset_percent']:
                                 percentageOfGroup = np.nan
                             else:
-                                percentageOfGroup = float(cell['asset_percent'].strip('%').replace(',',''))
+                                try:
+                                    percentageOfGroup = float(cell['asset_percent'].strip('%').replace(',',''))
+                                except:
+                                    percentageOfGroup = np.nan
                         elif 'liability_percent' in cell.keys():
                             if '(' in cell['liability_percent']:
                                 percentageOfGroup = -float(cell['liability_percent'].strip('()').strip('%').replace(',',''))
-                            elif '-' in cell['liability_percent'] or '' in cell['liability_percent']:
+                            elif '-' in cell['liability_percent'] or 'NM' in cell['liability_percent']:
                                 percentageOfGroup = np.nan
                             else:
-                                percentageOfGroup = float(cell['liability_percent'].strip('%').replace(',',''))
+                                try:
+                                    percentageOfGroup = float(cell['liability_percent'].strip('%').replace(',',''))
+                                except:
+                                    percentageOfGroup = np.nan
                         else:
                             percentageOfGroup = np.nan
                         #print(f''' INSERT INTO balanceSheets (companyTicker, date, lineItemName, lineItemDesc, lineItemSectionGroup, rawValue, yearOverYearGrowthValue, percentageOfGroup) VALUES ('{ticker}', '{date}', '{lineItemName}', '{lineItemDesc}', '{lineItemSectionGroup}', '{rawValue}', '{yoyValue}', '{percentageOfGroup}');''')
@@ -317,7 +329,7 @@ def getBalanceSheetData(ticker):
                         if 'yoy_value' in cell.keys():
                             if '(' in cell['yoy_value']:
                                 yoyValue = -float(cell['yoy_value'].strip('()').strip('%').replace(',',''))
-                            elif '-' in cell['yoy_value'] or '' in cell['yoy_value']:
+                            elif '-' in cell['yoy_value'] or 'NM' in cell['yoy_value']:
                                 yoyValue = np.nan
                             else:
                                 yoyValue = float(cell['yoy_value'].strip('%').replace(',',''))
@@ -329,14 +341,20 @@ def getBalanceSheetData(ticker):
                             elif '-' in cell['asset_percent'] or '' in cell['asset_percent']:
                                 percentageOfGroup = np.nan 
                             else:
-                                percentageOfGroup = float(cell['asset_percent'].strip('%').replace(',',''))
+                                try:
+                                    percentageOfGroup = float(cell['asset_percent'].strip('%').replace(',',''))
+                                except:
+                                    percentageOfGroup = np.nan
                         elif 'liability_percent' in cell.keys():
                             if '(' in cell['liability_percent']:
                                 percentageOfGroup = -float(cell['liability_percent'].strip('()').strip('%').replace(',',''))
                             elif '-' in cell['liability_percent'] or '' in cell['liability_percent']:
                                 percentageOfGroup = np.nan
                             else:
-                                percentageOfGroup = float(cell['liability_percent'].strip('%').replace(',',''))
+                                try:
+                                    percentageOfGroup = float(cell['liability_percent'].strip('%').replace(',',''))
+                                except:
+                                    percentageOfGroup = np.nan
                         else:
                             percentageOfGroup = np.nan
                         #print(f''' INSERT INTO balanceSheets (companyTicker, date, lineItemName, lineItemDesc, lineItemSectionGroup, rawValue, yearOverYearGrowthValue, percentageOfGroup) VALUES ('{ticker}', '{date}', '{lineItemName}', '{lineItemDesc}', '{lineItemSectionGroup}', '{rawValue}', '{yoyValue}', '{percentageOfGroup}');''')
@@ -394,10 +412,13 @@ def getCashFlowData(ticker):
                         if 'yoy_value' in cell.keys():
                             if '(' in cell['yoy_value']:
                                 yoyValue = -float(cell['yoy_value'].strip('()').strip('%').replace(',',''))
-                            elif '-' in cell['yoy_value'] or '' in cell['yoy_value']:
+                            elif '-' in cell['yoy_value'] or 'NM' in cell['yoy_value']:
                                 yoyValue = np.nan
                             else:
-                                yoyValue = float(cell['yoy_value'].strip('%').replace(',',''))
+                                try:
+                                    yoyValue = float(cell['yoy_value'].strip('%').replace(',',''))
+                                except:
+                                    yoyValue = np.nan
                         else:
                             yoyValue = np.nan
                         insertRecord_SQL = f''' INSERT INTO cashFlows (companyTicker, timeScale, date, lineItemName, lineItemDesc, lineItemSectionGroup, rawValue, yearOverYearGrowthValue) VALUES ('{ticker}','{timeScale}', '{date}', '{lineItemName}', "{lineItemDesc}", '{lineItemSectionGroup}', '{rawValue}', '{yoyValue}');'''
@@ -442,10 +463,13 @@ def getCashFlowData(ticker):
                         if 'yoy_value' in cell.keys():
                             if '(' in cell['yoy_value']:
                                 yoyValue = -float(cell['yoy_value'].strip('()').strip('%').replace(',',''))
-                            elif '-' in cell['yoy_value'] or '' in cell['yoy_value']:
+                            elif '-' in cell['yoy_value'] or 'NM' in cell['yoy_value']:
                                 yoyValue = np.nan
                             else:
-                                yoyValue = float(cell['yoy_value'].strip('%').replace(',',''))
+                                try:
+                                    yoyValue = float(cell['yoy_value'].strip('%').replace(',',''))
+                                except:
+                                    yoyValue = np.nan
                         else:
                             yoyValue = np.NaN
                         #print(f''' INSERT INTO balanceSheets (companyTicker, date, lineItemName, lineItemDesc, lineItemSectionGroup, rawValue, yearOverYearGrowthValue, percentageOfGroup) VALUES ('{ticker}', '{date}', '{lineItemName}', '{lineItemDesc}', '{lineItemSectionGroup}', '{rawValue}', '{yoyValue}', '{percentageOfGroup}');''')
@@ -476,7 +500,7 @@ def getIncomeStatementData(ticker):
 
     date=''
     if incomeStatementAnnualRes.status_code == 200 and len(companyAnnualIncomeStatement['data']) != 0:
-        for datum in companyAnnualIncomeStatement['data']: # there is one list of objects per line item, # TODO: cutting off final list item, Supplimental Info is a different data model
+        for datum in companyAnnualIncomeStatement['data']: # there is one list of objects per line item
             for item in datum:
                 for cell in item:
                     if cell['class'].startswith('left-label'):
@@ -506,10 +530,13 @@ def getIncomeStatementData(ticker):
                         if 'yoy_value' in cell.keys():
                             if '(' in cell['yoy_value']:
                                 yoyValue = -float(cell['yoy_value'].strip('()').strip('%').replace(',',''))
-                            elif '-' in cell['yoy_value'] or '' in cell['yoy_value']:
+                            elif '-' in cell['yoy_value'] or 'NM' in cell['yoy_value']:
                                 yoyValue = np.nan
                             else:
-                                yoyValue = float(cell['yoy_value'].strip('%').replace(',',''))
+                                try:
+                                    yoyValue = float(cell['yoy_value'].strip('%').replace(',',''))
+                                except:
+                                    yoyValue = np.nan
                         else:
                             yoyValue = np.NaN
                         if 'revenue_percent' in cell.keys():
@@ -518,8 +545,11 @@ def getIncomeStatementData(ticker):
                             elif '-' in cell['revenue_percent'] or 'nan' in cell['revenue_percent'] or '' in cell['revenue_percent']:
                                 percentageOfRevenue = np.nan
                             else:
-                                print(percentageOfRevenue)
-                                percentageOfRevenue = float(cell['revenue_percent'].strip('%').replace(',',''))
+                                # print(percentageOfRevenue)
+                                try:
+                                    percentageOfRevenue = float(cell['revenue_percent'].strip('%').replace(',',''))
+                                except:
+                                    percentageOfRevenue = np.nan
                         else:
                             percentageOfRevenue = np.nan
                         # print(f''' INSERT INTO balanceSheets (companyTicker, date, lineItemName, lineItemDesc, lineItemSectionGroup, rawValue, yearOverYearGrowthValue, percentageOfGroup) VALUES ('{ticker}', '{date}', '{lineItemName}', '{lineItemDesc}', '{lineItemSectionGroup}', '{rawValue}', '{yoyValue}', '{percentageOfGroup}');''')
@@ -545,40 +575,46 @@ def getIncomeStatementData(ticker):
                         lineItemDesc = cell['name']
                         lineItemSectionGroup = cell['sectionGroup']
                     if cell['class'].startswith('value'):
-                        if 'TTM' in cell['name']:
-                            timeScale = 'quarterly_TTM'
-                            date = datetime.datetime.now()
-                        elif 'Last Report' in cell['name']:
-                            timeScale = 'quarterly_lastReport'
-                            date = datetime.datetime.now()
-                        else:
-                            timeScale = 'quarterly'
-                            date = datetime.datetime.strptime(cell['name'], '%b %Y')
+                        if cell['class'].startswith('value'):
+                            if 'TTM' in cell['name']:
+                                timeScale = 'quarterly_TTM'
+                                date = datetime.datetime.now()
+                            elif 'Last Report' in cell['name']:
+                                timeScale = 'quarterly_lastReport'
+                                date = datetime.datetime.now()
+                            else:
+                                timeScale = 'quarterly'
+                                date = datetime.datetime.strptime(cell['name'], '%b %Y')
                         if 'raw_value' in cell.keys():
                             if '(' in cell['raw_value']:
-                                rawValue = round(format(-float(cell['raw_value'].strip('()').replace(',','')),'f'),2)
-                            elif 'NM' in cell['raw_value'] or '' in cell['raw_value']:
+                                rawValue = round(-float(cell['raw_value'].strip('()').replace(',','')),2)
+                            elif 'NM' in cell['raw_value']:
                                 rawValue = np.nan
                             else:
-                                rawValue = round(format(float(cell['raw_value'].replace(',','')),'f'),2)
+                                rawValue = round(float(cell['raw_value'].replace(',','')),2)
                         else:
-                            rawValue = np.NaN
+                            rawValue = np.nan
                         if 'yoy_value' in cell.keys():
                             if '(' in cell['yoy_value']:
                                 yoyValue = -float(cell['yoy_value'].strip('()').strip('%').replace(',',''))
-                            elif '-' in cell['yoy_value'] or '' in cell['yoy_value']:
+                            elif '-' in cell['yoy_value'] or 'NM' in cell['yoy_value']:
                                 yoyValue = np.nan
                             else:
                                 yoyValue = float(cell['yoy_value'].strip('%').replace(',',''))
                         else:
-                            yoyValue = np.NaN
+                            yoyValue = np.nan
                         if 'revenue_percent' in cell.keys():
+                            # print(cell['revenue_percent'])
                             if '(' in cell['revenue_percent']:
                                 percentageOfRevenue = -float(cell['revenue_percent'].strip('()').strip('%').replace(',',''))
-                            elif '-' in cell['revenue_percent'] or '' in cell['revenue_percent']:
+                            elif '-' in cell['revenue_percent'] or '' in cell['revenue_percent'] or 'nan' in cell['revenue_percent']:
                                 percentageOfRevenue = np.nan
                             else:
-                                percentageOfRevenue = float(cell['revenue_percent'].strip('%').replace(',',''))
+                                # print(percentageOfRevenue)
+                                try:
+                                    percentageOfRevenue = float(cell['revenue_percent'].strip('%').replace('$','').replace(',',''))
+                                except:
+                                    percentageOfRevenue = np.nan
                         else:
                             percentageOfRevenue = np.nan
                         #print(f''' INSERT INTO balanceSheets (companyTicker, date, lineItemName, lineItemDesc, lineItemSectionGroup, rawValue, yearOverYearGrowthValue, percentageOfGroup) VALUES ('{ticker}', '{date}', '{lineItemName}', '{lineItemDesc}', '{lineItemSectionGroup}', '{rawValue}', '{yoyValue}', '{percentageOfGroup}');''')
@@ -655,13 +691,13 @@ def getXigniteOptionsToken():
     userid = xigniteTokenInfo['_token_userid']
     return token, userid
 
-def getOptionsData(ticker):
+def getOptionsData(ticker, month, year):
     # headers = getRequestHeaders(ticker)
     # databaseName = getDatabaseName()
     # sqliteConnection = sqlite3.connect(databaseName)
     # cursor = sqliteConnection.cursor()
     token, userid = getXigniteOptionsToken()
-    month=12; year=2020
+    #month=12; year=2020
     getEquityOptionsDataURL = f'''https://globaloptions.xignite.com/xglobaloptions.json/GetEquityOptionChain?IdentifierType=Symbol&Identifier={ticker}&Month={month}&Year={year}&SymbologyType=&OptionExchange=&_callback=SA.Utils.SymbolData.clb15901181749410&_token={token}&_token_userid={userid}&_=1590118174801 '''
     equityOptionsChainData = requests.get(url=getEquityOptionsDataURL)
     # print(equityOptionsChainData.content)
@@ -1259,6 +1295,22 @@ def calculateProjectedROI(ticker):
     sqliteConnection.close()
     return
 
+def gsheets_companyRevenue():
+    # query = f'''select * from incomeStatements where companyTicker = '{ticker}' and lineitemsectiongroup = 'revenue'; '''
+    gc = pygsheets.authorize()
+    sh = gc.open('New Sheet')
+    wks = sh.sheet1
+
+    wks.update_value('A1', "Hey yank this numpy array")
+    my_nparray = np.random.randint(10, size=(3, 4))
+
+    # update the sheet with array
+    wks.update_values('A2', my_nparray.tolist())
+
+
+    return
+
+
 ######  #     # #     #    ####### ### #     # ####### 
 #     # #     # ##    #       #     #  ##   ## #       
 #     # #     # # #   #       #     #  # # # # #       
@@ -1274,13 +1326,13 @@ def executeTickerList(tickerList, debugBool):
         getCashFlowData(ticker)
         getPriceActionData(ticker)
         getCompanyOverviewData(ticker)
-        getOptionsData(ticker)
+        #getOptionsData(ticker)
         calc_futureCoupon(ticker, debugFlag=debugBool)
 
     return
 
 def readFromTextFile(fileList, debugBool):
-    if len(sys.argv) == []:
+    if len(sys.argv) == []: # TODO: with command line arguments, this condition is no longer needed
         for file in ['symbols_nyse.txt', 'symbols_nasdaq.txt', 'symbols_amex.txt']:
             tickerList = []
             tickerStr = ''
@@ -1315,12 +1367,12 @@ def readFromTextFile(fileList, debugBool):
                     print(ticker)
                 else:
                     print(f'{ticker}\t\t\tFile: {fileCounter} [{counter}/{len(tickerList)}]')
-                    # getBalanceSheetData(ticker)
-                    # getCashFlowData(ticker)
-                    # getIncomeStatementData(ticker)
-                    # getPriceActionData(ticker)
-                    # getCompanyOverviewData(ticker)
-                    getOptionsData(ticker)
+                    getBalanceSheetData(ticker)
+                    getCashFlowData(ticker)
+                    getIncomeStatementData(ticker)
+                    getPriceActionData(ticker)
+                    getCompanyOverviewData(ticker)
+                    # getOptionsData(ticker)
 
                     # calc_futureCoupon(ticker, debugFlag=debugBool)
                     counter += 1
@@ -1348,7 +1400,7 @@ def readFromCSV():
 def main():
     # parser = argparse.ArgumentParser(description=f'{log("Profit Hawk", color="red", figlet=True)}')
     parser = argparse.ArgumentParser(description=f'SA Miner CLI')
-
+    
     
     tickerList = []; fileList = ''; debugFlag = ''; # TODO: What is metavar property used for in argparse?
     parser.add_argument('-d', '--debug',action='store_true', help='Signal True Dubug Flag for detailed output and logging')
@@ -1356,6 +1408,8 @@ def main():
     #parser.add_argument('-f', '--file', type=str, nargs=1, metavar=fileList, default=None,help='Provide 1 to * space delimited filenames with tickers')
     parser.add_argument('-f', '--file',action='store',type=str,nargs='+', help='Provide 1 to * space delimited files, containing space delimited tickers')
     #parser.add_argument('-d', '--debug', type=str, nargs=1, metavar=debugFlag, default=True, help='Signal to print debug detail info to screen and logfile')
+    parser.add_argument('-n', '--name', action='store',type=str,nargs='+', help='Switch to provide a custom name for database')
+
 
     args = parser.parse_args()
 
@@ -1373,7 +1427,10 @@ def main():
     else:
         print('Nothing')
 
-    
+    if args.name:
+        pass
+
+
     return
 
 # @main.command()
@@ -1388,9 +1445,11 @@ def main():
 if __name__ == '__main__':   
     #log("Profit Hawk", color="red", figlet=True)
     #deleteDatabase()
-
+    #TODO: Class together all API miner commands, so flask server can keep database updated without doing a complete pull every time
     rotateLog()
     ifNotExistsCreateDB()
+    
+    
     # #readFromCommandLine()
     # #readFromCSV()
     # readFromTextFile(debugBool=True)
