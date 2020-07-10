@@ -880,7 +880,7 @@ class seekingAlphaMiner():
                 container = soup.find('a', {"class": "filing-pdf pull-right"}, href=True) # https://stackoverflow.com/questions/5815747/beautifulsoup-getting-href
                 # print(container['href'])
                 # Append uri to base site url "https://seekingalpha.com"
-                url3 = f'https://seekingalpha.com{container["href"]}'
+                #url3 = f'https://seekingalpha.com{container["href"]}'
                 # Send this request and get uri for PDF of filing
                 # filingPDF = requests.get(url=url3, headers=headers)
                 # #print(filingPDF.content)
@@ -891,11 +891,18 @@ class seekingAlphaMiner():
                     filingDescription = filing["description"].replace("'", "")
                 except:
                     filingDescription = ''
-                insertQuery = f''' INSERT INTO secFilings (companyTicker, filingID , filingURI , filingFormName , filingDescription , filingDate , filingPDF ) VALUES ('{ticker}', '{filing["id"]}', 'https://seekingalpha.com{filing["uri"]}', '{filing["form_name"]}', '{filingDescription}', "{datetime.datetime.strptime(filing["date"], '%m/%d/%Y')}", 'https://seekingalpha.com{container["href"]}')'''
+                
+                try:
+                    insertQuery = f''' INSERT INTO secFilings (companyTicker, filingID , filingURI , filingFormName , filingDescription , filingDate , filingPDF ) VALUES ('{ticker}', '{filing["id"]}', 'https://seekingalpha.com{filing["uri"]}', '{filing["form_name"]}', '{filingDescription}', "{datetime.datetime.strptime(filing["date"], '%m/%d/%Y')}", 'https://seekingalpha.com{container["href"]}')'''
+                except:
+                    pass
                 #https://strftime.org/ for datetime format codes
-                print(insertQuery)
-                cursor.execute(insertQuery)
-                sqliteConnection.commit()
+                #print(insertQuery)
+                try:
+                    cursor.execute(insertQuery)
+                    sqliteConnection.commit()
+                except:
+                    pass
 
             cursor.close()
             sqliteConnection.close()
