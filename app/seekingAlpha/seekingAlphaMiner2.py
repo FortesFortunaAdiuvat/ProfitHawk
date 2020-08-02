@@ -104,6 +104,7 @@ class seekingAlphaMiner():
         cursor.execute(createOverviewDataTable)
         cursor.execute(createOptionsDataTable)
         cursor.execute(createSecFilingsTable)
+        cursor.execute(createTickersTable)
 
         sqliteConnection.commit()
         sqliteConnection.close()
@@ -158,14 +159,37 @@ class seekingAlphaMiner():
         else:
             six.print_(string)
 
+    def import_ticker_list(self, ticker_file):
+        # get ticker list file from: http://www.eoddata.com/symbols.aspx; NYSE direct option: https://www.nyse.com/listings_directory/stock
+        if os.path.exists(ticker_file):
+            databaseName = self.getDatabaseName()
+            sqliteConnection = sqlite3.connect(databaseName)
+            cursor = sqliteConnection.cursor()
+            with open(ticker_file, 'r') as f:
+                for line in f:
+                    if line.split('\t')[0] == 'Symbol':
+                        pass
+                    else:
+                        #print(line.split('\t')[0])
+                        ticker = line.split('\t')[0]
+                        #print(ticker)
+                        insertRecord_SQL = f''' INSERT INTO tickers (ticker) VALUES ('{ticker}');'''
+                        cursor.execute(insertRecord_SQL)
+            sqliteConnection.commit()
+            cursor.close()
+            sqliteConnection.close()
 
-    #     # ####### ######      #####   #####  ######     #    ######  ####### ######   #####  
-    #  #  # #       #     #    #     # #     # #     #   # #   #     # #       #     # #     # 
-    #  #  # #       #     #    #       #       #     #  #   #  #     # #       #     # #       
-    #  #  # #####   ######      #####  #       ######  #     # ######  #####   ######   #####  
-    #  #  # #       #     #          # #       #   #   ####### #       #       #   #         # 
-    #  #  # #       #     #    #     # #     # #    #  #     # #       #       #    #  #     # 
-     ## ##  ####### ######      #####   #####  #     # #     # #       ####### #     #  #####  
+        return
+
+    ####################################################################################################
+    #     #     # ####### ######      #####   #####  ######     #    ######  ####### ######   #####    #
+    #     #  #  # #       #     #    #     # #     # #     #   # #   #     # #       #     # #     #   #
+    #     #  #  # #       #     #    #       #       #     #  #   #  #     # #       #     # #         #
+    #     #  #  # #####   ######      #####  #       ######  #     # ######  #####   ######   #####    #
+    #     #  #  # #       #     #          # #       #   #   ####### #       #       #   #         #   #
+    #     #  #  # #       #     #    #     # #     # #    #  #     # #       #       #    #  #     #   #
+    #      ## ##  ####### ######      #####   #####  #     # #     # #       ####### #     #  #####    #
+    #################################################################################################### 
 
     def getCompanyOverviewData(self,ticker):
         url = f'https://seekingalpha.com/symbol/{ticker}/overview'
@@ -1562,7 +1586,9 @@ def readFromCSV():
 
 def executeWorkaround(minerObj):
     #minerObj.gsheets_companyRevenue('SCHW')
-    minerObj.getOptionsData('SCHW')
+    #minerObj.getOptionsData('SCHW')
+    minerObj.ifNotExistsCreateDB()
+    minerObj.import_ticker_list('NYSE_symbols_20200729.txt')
     print('Workaround done.')
     return
 
