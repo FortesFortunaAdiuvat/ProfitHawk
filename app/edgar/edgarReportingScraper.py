@@ -32,16 +32,21 @@ filings_table = soup.find('table')
 filings_list = str(filings_table).split('\n')
 
 filing_df = pd.DataFrame(columns=['Company Name', 'Filing Detail Link'])
-
+company_name_list = []
+company_filing_detail_link_list = []
 for filing_line in filings_list:
     filing_line = re.sub(' +',' ',filing_line) #https://stackoverflow.com/questions/37445285/how-to-best-replace-multiple-whitespaces-by-one-in-python/37445349;  https://stackoverflow.com/questions/2077897/substitute-multiple-whitespace-with-single-whitespace-in-python
     filing_line = filing_line.split(' ',6) # https://stackoverflow.com/questions/30636248/split-a-string-only-by-first-space-in-python/30636260    
     # print(filing_line)
     if len(filing_line) == 7 and filing_line[0] == '08-03-2020':
         print(filing_line[6]+': sec.gov'+filing_line[2].replace('href="','').replace('">SC',''))
+        company_name_list.append(filing_line[6])
+        filing_detail_link = filing_line[2].replace('href="','').replace('">SC','')
+        company_filing_detail_link_list.append(filing_detail_link)
 
-
-
+# pd.set_option('display.max_columns', 0)
+filing_df['Company Name'] = company_name_list
+filing_df['Filing Detail Link'] = company_filing_detail_link_list
 print(filing_df)
 
     
