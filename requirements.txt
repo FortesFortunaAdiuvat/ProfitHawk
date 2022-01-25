@@ -53,7 +53,7 @@ pathlib==1.0.1
 prettytable==0.7.2
 prompt-toolkit==1.0.14
 pyfiglet==0.8.post1
-Pygments==2.6.1
+Pygments==2.7.4
 PyInquirer==1.0.3
 pylint==2.4.4
 pyrsistent==0.16.0
