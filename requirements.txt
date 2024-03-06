@@ -1,4 +1,4 @@
-certifi==2018.11.29
+certifi==2022.12.7
 chardet==3.0.4
 Click==7.0
 clickclick==1.2.2
@@ -25,7 +25,7 @@ urllib3==1.26.5
 Werkzeug==2.2.3
 astroid==2.3.3
 attrs==19.3.0
-certifi==2018.11.29
+certifi==2022.12.7
 chardet==3.0.4
 Click==7.0
 clickclick==1.2.2
